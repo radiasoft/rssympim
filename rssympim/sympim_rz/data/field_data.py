@@ -1,43 +1,17 @@
 import numpy as np
 from numpy import sin, cos
 from scipy.special import j0, j1, jn_zeros, fresnel
-from numba import jitclass, float64, int64
 
-# Compile the class as a Numba class for performance purposes
-spec = [('kr', float64[:]),
-        ('kz', float64[:]),
-        ('mode_coords', float64[:]),
-        ('omega', float64[:]),
-        ('n_modes_r', int64),
-        ('n_modes_z', int64),
-        ('ptcl_width_r', float64),
-        ('ptcl_width_z', float64),
-        ('shape_function_z', float64[:]),
-        ('root2', float64),
-        ('root2opi', float64),
-        ('quarterpi', float64),
-        ('fresnelC', float64[:]),
-        ('fresnelS', float64[:]),
-        ('n_ptcls', int64),
-        ('Ar', float64[:]),
-        ('Az', float64[:]),
-        ('convolution', float64[:]),
-        ('dFrdz', float64[:]),
-        ('dFzdr', float64[:]),
-        ('dFrdQ', float64[:]),
-        ('dFzdQ', float64[:])]
-
-#@jitclass(spec)
-class field_data:
+class field_data(object):
 
     def __init__(self, L, R, n_modes_r, n_modes_z):
 
-        self.kr = jn_zeros(0, n_modes_r, dtype=np.float64)/R
-        self.kz = 2.*np.pi*np.arange(1,n_modes_z+1, dtype=np.float64)/L
+        self.kr = jn_zeros(0, n_modes_r)/R
+        self.kz = 2.*np.pi*np.arange(1,n_modes_z+1)/L
 
         # Use linear strides for indexing the modes
-        self.mode_coords = np.zeros((n_modes_r*n_modes_z,2), dtype=np.float64)
-        self.omega = np.zeros(n_modes_r*n_modes_z, dtype=np.float64)
+        self.mode_coords = np.zeros((n_modes_r*n_modes_z,2))
+        self.omega = np.zeros(n_modes_r*n_modes_z)
         for idx_r in range(0,n_modes_r):
             for idx_z in range(0,n_modes_z):
                 self.omega[idx_r + (n_modes_r)*idx_z]= \
@@ -48,9 +22,11 @@ class field_data:
         self.n_modes_z = n_modes_z
 
         # Particles are tent functions with widths the narrowest of the
-        # k-vectors for each direction
-        ptcl_width_z = 2.*np.pi/max(self.kz)
-        self.ptcl_width_r = 2.*np.pi/max(self.kr)
+        # k-vectors for each direction. Default for now is to have the
+        # particle widths be half the shortest wavelength, which should
+        # resolve the wave physics reasonably well.
+        ptcl_width_z = .5*2.*np.pi/max(self.kz)
+        self.ptcl_width_r = .5*2.*np.pi/max(self.kr)
 
         self.shape_function_z = 2.*(1.-cos(self.kz*ptcl_width_z))/\
                                 (self.kz*self.kz*ptcl_width_z)
@@ -137,7 +113,6 @@ class field_data:
                j0(_x+.25*self.ptcl_width_r)*2./3.+j0(_x)/3.)
 
 
-
     def compute_Ar(self, _r, _z):
         """
         Evaluate Ar for a set of particles
@@ -151,6 +126,7 @@ class field_data:
         for idx_r in range(0,self.n_modes_r):
             self.convolution = \
                 self.convolved_j1(self.kr[idx_r]*_r)/self.kr[idx_r]
+            print self.convolution
             for idx_z in range(0,self.n_modes_z):
                 Ar += self.mode_coords[idx_r + self.n_modes_r*idx_z][1]* \
                       self.convolution*\
