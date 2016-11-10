@@ -1,6 +1,8 @@
 import numpy as np
 from numpy import sin, cos
 from scipy.special import j0, j1, jn_zeros, fresnel
+# Commented out until MPI implementation is ready
+#from mpi4py import MPI
 
 class field_data(object):
 
@@ -17,6 +19,7 @@ class field_data(object):
                 self.omega[idx_r + (n_modes_r)*idx_z]= \
                     np.sqrt(self.kr[idx_r]**2 +self.kz[idx_z]**2)
 
+        self.delta_P = np.zeros(n_modes_r*n_modes_z)
 
         self.n_modes_r = n_modes_r
         self.n_modes_z = n_modes_z
@@ -95,6 +98,7 @@ class field_data(object):
                 j1(_x+.5*self.ptcl_width_r))/6. + \
                (j1(np.abs(_x-.25*self.ptcl_width_r)))+\
                j1(_x+.25*self.ptcl_width_r)*2./3.+j1(_x)/3.
+
 
     def int_convolved_j0(self, _x):
 
@@ -227,3 +231,14 @@ class field_data(object):
                       sin(self.kz[idx_z]*_z)*self.shape_function_z[idx_z]
 
         return dFrdQ
+
+
+    def finalize_fields(self):
+        """
+        MPI communication on the fields at the end of the update sequence
+        :return:
+        """
+        # Commented out until the MPI implementation is ready
+        #self.comm.allreduce(self.delta_P, op=MPI.SUM, root=0)
+        self.mode_coords[:,0] += self.delta_P[:]
+        self.delta_P = np.zeros(self.n_modes_r*self.n_modes_z)

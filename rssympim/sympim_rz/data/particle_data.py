@@ -1,5 +1,5 @@
 import numpy as np
-from sympim_rz.constants import constants as consts
+from rssympim.sympim_rz.constants import constants as consts
 
 class particle_data:
 

@@ -1,4 +1,4 @@
-from sympim_rz.maps import ptcl_maps, field_maps, similarity_maps
+from rssympim.sympim_rz.maps import ptcl_maps, field_maps, similarity_maps
 
 
 class integrator:
@@ -31,6 +31,9 @@ class integrator:
         self.ptcl_maps.half_drift_r(ptcl_data)
         self.sim_maps.A_r_inverse(field_data, ptcl_data)
         self.ptcl_maps.half_angular_momentum(ptcl_data)
+
+        # Add the delta-P to each mode
+        self.field_data.finalize_fields()
 
 
     def half_field_forward(self, field_data):
