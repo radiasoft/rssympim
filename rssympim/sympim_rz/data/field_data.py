@@ -145,7 +145,6 @@ class field_data(object):
         for idx_r in range(0,self.n_modes_r):
             self.convolution = \
                 self.convolved_j1(self.kr[idx_r]*_r)*self.ptcl_width_r
-            print self.convolution
             for idx_z in range(0,self.n_modes_z):
                 Ar += self.mode_coords[idx_r + self.n_modes_r*idx_z][1]* \
                       self.convolution*\
