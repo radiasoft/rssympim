@@ -113,27 +113,23 @@ class field_data(object):
         :return:
         """
 
-        return (j1(_x - .5*self.ptcl_width_r)+
-                j1(_x+.5*self.ptcl_width_r))/6. + \
-               (j1(np.abs(_x-.25*self.ptcl_width_r)))+\
-               j1(_x+.25*self.ptcl_width_r)*2./3.+j1(_x)/3.
+        return (j1(_x-.5*self.ptcl_width_r) +
+                4.*j1(_x) +
+                j1(_x+.5*self.ptcl_width_r))/6.
 
 
     def int_convolved_j0(self, _x):
 
-        return (self.int_my_j0(np.abs(_x - .5*self.ptcl_width_r))+
-                self.int_my_j0(_x+.5*self.ptcl_width_r))/6. + \
-               (self.int_my_j0(np.abs(_x-.25*self.ptcl_width_r))+ \
-               self.int_my_j0(_x+.25*self.ptcl_width_r))*2./3.+\
-               self.int_my_j0(_x)/3.
+        return (self.int_my_j0(_x-.5*self.ptcl_width_r) +
+                4.*self.int_my_j0(_x) +
+                self.int_my_j0(_x+.5*self.ptcl_width_r))/6.
 
 
     def int_convolved_j1(self, _x):
 
-        return -1.*((j0(np.abs(_x - .5*self.ptcl_width_r))+
-                j0(_x+.5*self.ptcl_width_r))/6. + \
-               (j0(np.abs(_x-.25*self.ptcl_width_r))+\
-               j0(_x+.25*self.ptcl_width_r))*2./3.+j0(_x)/3.)
+        return -1.*(j0(_x-.5*self.ptcl_width_r) +
+                4.*j0(_x) +
+                j0(_x+.5*self.ptcl_width_r))/6.
 
 
     def compute_Ar(self, _r, _z):
