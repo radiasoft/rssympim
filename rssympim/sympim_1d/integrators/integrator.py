@@ -10,10 +10,12 @@ class integrator:
         self.field_maps = field_maps(frequencies, dt)
 
 
-    def single_step(self, ptcl_data, field_data):
+    def field_update(self, field_data):
 
         # Update the fields then compute gamma to get a symplectic integrator
         self.field_maps.advance_forward(field_data)
+
+    def particle_update(self, ptcl_data, field_data):
 
         # always compute the new gamma_mc after the field map update
         ptcl_data.compute_gamma_mc(field_data)
@@ -21,6 +23,9 @@ class integrator:
         self.sim_maps.A_z(field_data, ptcl_data)
         self.ptcl_maps.drift_z(ptcl_data)
         self.sim_maps.A_z_inverse(field_data, ptcl_data)
+
+
+    def finalize_fields(self):
 
         # Add the delta-P to each mode
         self.field_data.finalize_fields()
