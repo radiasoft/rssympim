@@ -256,3 +256,13 @@ class field_data(object):
         #self.comm.allreduce(self.delta_P, op=MPI.SUM, root=0)
         self.mode_coords[:,0] += self.delta_P[:]
         self.delta_P = np.zeros(self.n_modes_r*self.n_modes_z)
+
+
+    def compute_energy(self):
+        """
+        Computes the energy stored in each mode
+        :return: numpy array with the field energy of each mode
+        """
+
+        squares = self.mode_coords*self.mode_coords
+        return 0.5*(squares[:,0] + self.omega*squares[:,1])

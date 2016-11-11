@@ -4,6 +4,14 @@ from rssympim.sympim_rz.constants import constants as consts
 class particle_data:
 
     def __init__(self, n_particles, charge, mass, weight):
+        """
+        Stores the particle data and can compute the particle ensemble
+        quantities
+        :param n_particles: number of macroparticles, an int
+        :param charge: charge of the physical species in esu
+        :param mass: mass of the physical species in esu
+        :param weight: number of particles per macroparticle
+        """
 
         self.r = np.zeros(n_particles)
         self.z = np.zeros(n_particles)
@@ -44,7 +52,7 @@ class particle_data:
 
     def compute_ptcl_energy(self, field_data):
 
-        return self.compute_gamma(field_data)*self.mc*consts.c
+        return self.compute_gamma_mc(field_data)*consts.c
 
 
     def r_boundaries(self):
