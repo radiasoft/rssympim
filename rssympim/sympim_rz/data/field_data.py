@@ -28,8 +28,8 @@ class field_data(object):
         # k-vectors for each direction. Default for now is to have the
         # particle widths be half the shortest wavelength, which should
         # resolve the wave physics reasonably well.
-        ptcl_width_z = .1*2.*np.pi/max(self.kz)
-        self.ptcl_width_r = .1*2.*np.pi/max(self.kr)
+        ptcl_width_z = .1/max(self.kz)
+        self.ptcl_width_r = .1/max(self.kr)
 
         self.shape_function_z = 2.*(1.-cos(self.kz*ptcl_width_z))/\
                                 (self.kz*self.kz*ptcl_width_z)
@@ -51,9 +51,20 @@ class field_data(object):
         :param _x: an array of values
         :return: j0: approximate value of j0
         """
-        return np.where(_x < 1.13229,
-                 1.+_x*_x*(.015625*_x*_x-.25),
-                 self.root2opi/np.sqrt(_x)*np.cos(_x-self.quarterpi))
+
+        # Use Horner's rule to minimize computation a bit
+        return np.where(_x < 4.14048,
+                        1.+_x*_x*(
+                            -1./4. + _x*_x*(
+                                1./64. + _x*_x*(
+                                    -1./2304. + _x*_x*(
+                                        1./147456. + _x*_x*(
+                                            -1./14745600 + _x*_x/2123366400.)
+                                        )
+                                    )
+                                )
+                            ),
+                        self.root2opi/np.sqrt(_x)*np.cos(_x-self.quarterpi))
 
 
     def int_my_j0(self,_x):
@@ -66,8 +77,18 @@ class field_data(object):
 
         fresnelC, fresnelS = fresnel(self.root2opi*np.sqrt(_x))
 
-        return np.where(_x < 1.13229,
-                 _x*(1.+_x*_x*(_x*_x/320. - 1./12.)),
+        # Use Horner's rule to minimize computation a bit
+        return np.where(_x < 4.14048,
+                 _x*(1. + _x*_x*(
+                     -1./12. + _x*_x*(
+                         1./320. + _x*_x*(
+                             -1./16128. + _x*_x*(
+                                 1./1327104. + _x*_x*(
+                                     -1./162201600. + _x*_x/27603763200.)
+                             )
+                         )
+                     )
+                 )),
                  self.root2*(fresnelC + fresnelS))
 
 
@@ -79,11 +100,9 @@ class field_data(object):
         :return:
         """
 
-        return (self.my_j0(np.abs(_x - .5*self.ptcl_width_r))+
-                self.my_j0(_x+.5*self.ptcl_width_r))/6. + \
-               (self.my_j0(np.abs(_x-.25*self.ptcl_width_r))+ \
-               self.my_j0(_x+.25*self.ptcl_width_r))*2./3.+\
-               self.my_j0(_x)/3.
+        return (self.my_j0(_x-.5*self.ptcl_width_r) +
+                4.*self.my_j0(_x) +
+                self.my_j0(_x+.5*self.ptcl_width_r))/6.
 
 
     def convolved_j1(self, _x):
@@ -94,7 +113,7 @@ class field_data(object):
         :return:
         """
 
-        return (j1(np.abs(_x - .5*self.ptcl_width_r))+
+        return (j1(_x - .5*self.ptcl_width_r)+
                 j1(_x+.5*self.ptcl_width_r))/6. + \
                (j1(np.abs(_x-.25*self.ptcl_width_r)))+\
                j1(_x+.25*self.ptcl_width_r)*2./3.+j1(_x)/3.
