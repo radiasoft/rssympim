@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import cos
+from rssympim.constants import constants
 # Commented out until MPI implementation is ready
 #from mpi4py import MPI
 
@@ -13,7 +14,7 @@ class field_data(object):
         self.mode_coords = np.zeros((n_modes_z,2))
         self.omega = np.zeros(n_modes_z)
         for idx_z in range(0,n_modes_z):
-            self.omega[idx_z]= self.kz[idx_z]
+            self.omega[idx_z]= constants.c*self.kz[idx_z]
 
         self.delta_P = np.zeros(n_modes_z)
 

@@ -43,9 +43,6 @@ my_fields = field_data.field_data(L_domain, n_modes)
 freqs = my_fields.omega
 dt = .1/np.max(freqs)
 
-print freqs
-print omega_p
-
 my_plasma = particle_data.particle_data(n_macro,constants.electron_charge,
                                         constants.electron_mass, weight)
 
@@ -53,8 +50,6 @@ my_beam = particle_data.particle_data(n_macro_beam, constants.electron_charge,
                                       constants.electron_mass, beam_weight)
 
 time = 0.
-print dt
-print t_final
 
 # set up the integrator
 my_integrator = integrator.integrator(dt, freqs)
@@ -70,3 +65,5 @@ while time <= t_final:
     my_integrator.finalize_fields(my_fields)
 
     time += dt
+
+    print 'taking step for t =', time,' secs'
