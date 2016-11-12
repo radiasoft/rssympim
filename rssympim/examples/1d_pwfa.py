@@ -19,7 +19,7 @@ k_p = omega_p/constants.c
 n_beam = 1e9 #total ptcls
 beam_length = 1.e-9 #nanoseconds
 n_macro_beam = 1e3
-beam_weight = n_beam/n_macro_beam
+beam_weight = int(n_beam/n_macro_beam)
 
 # Simulation domain
 
@@ -30,7 +30,7 @@ t_final = n_periods/omega_p
 # Make the length three plasma wavelengths
 plasma_lengths = 3
 L_domain = 3/k_p
-ptcls_per_plasma_length = 100
+ptcls_per_plasma_length = 1000
 n_macro = ptcls_per_plasma_length*plasma_lengths
 weight = L_domain*n_plasma/n_macro
 
@@ -43,6 +43,9 @@ my_fields = field_data.field_data(L_domain, n_modes)
 freqs = my_fields.omega
 dt = .1/np.max(freqs)
 
+print freqs
+print omega_p
+
 my_plasma = particle_data.particle_data(n_macro,constants.electron_charge,
                                         constants.electron_mass, weight)
 
@@ -50,6 +53,8 @@ my_beam = particle_data.particle_data(n_macro_beam, constants.electron_charge,
                                       constants.electron_mass, beam_weight)
 
 time = 0.
+print dt
+print t_final
 
 # set up the integrator
 my_integrator = integrator.integrator(dt, freqs)
@@ -62,6 +67,6 @@ while time <= t_final:
     my_integrator.particle_update(my_plasma, my_fields)
     my_integrator.particle_update(my_beam, my_fields)
     my_integrator.field_update(my_fields)
-    my_integrator.finalize_fields()
+    my_integrator.finalize_fields(my_fields)
 
     time += dt

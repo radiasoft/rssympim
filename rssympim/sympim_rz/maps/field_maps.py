@@ -6,7 +6,7 @@ class field_maps:
     def __init__(self, _frequencies, _dt):
 
         self.phase_advance = _frequencies*_dt
-        self.n_modes = np.shape[_frequencies][0]
+        self.n_modes = np.shape(_frequencies)[0]
         self.rotation_matrices = np.zeros((self.n_modes,2,2))
         self.half_for_rot_mat = np.zeros((self.n_modes,2,2))
         self.half_bac_rot_mat = np.zeros((self.n_modes,2,2))
@@ -40,12 +40,12 @@ class field_maps:
     def half_advance_forward(self, field_data):
 
         for idx in range(0,self.n_modes):
-            field_data.z[idx] = np.dot(self.half_for_rot_mat[idx],
-                                       field_data.z[idx])
+            field_data.mode_coords[idx] = np.dot(self.half_for_rot_mat[idx],
+                                       field_data.mode_coords[idx])
 
 
     def half_advance_back(self, field_data):
 
         for idx in range(0,self.n_modes):
-            field_data.z[idx] = np.dot(self.half_bac_rot_mat[idx],
-                                            field_data.z[idx])
+            field_data.mode_coords[idx] = np.dot(self.half_bac_rot_mat[idx],
+                                            field_data.mode_coords[idx])

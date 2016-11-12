@@ -52,10 +52,10 @@ class field_data(object):
         :return: Fz, a numpy array
         """
         n_ptcls = np.shape(_z)[0]
-        dFzdQ = np.zeros(n_ptcls)
+        dFzdQ = np.zeros(self.n_modes_z)
 
-        for idx_z in range(0,self.n_modes_z):
-            dFzdQ += cos(self.kz[idx_z]*_z)*self.shape_function_z[idx_z]
+        for idx_z in range(0,n_ptcls):
+            dFzdQ += cos(self.kz*_z[idx_z])*self.shape_function_z
 
         return dFzdQ
 

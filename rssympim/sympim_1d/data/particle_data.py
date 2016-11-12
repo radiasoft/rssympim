@@ -15,10 +15,10 @@ class particle_data:
         :param weight: number of particles per macroparticle
         """
 
-        self.z = np.zeros(n_particles)
-        self.pz = np.zeros(n_particles)
-        self.gamma = np.zeros(n_particles)
-        self.gamma_mc = np.zeros(n_particles)
+        self.z = np.zeros(int(n_particles))
+        self.pz = np.zeros(int(n_particles))
+        self.gamma = np.zeros(int(n_particles))
+        self.gamma_mc = np.zeros(int(n_particles))
 
         self.weight = weight
 
@@ -42,7 +42,7 @@ class particle_data:
     def compute_gamma_mc(self, field_data):
 
         self.gamma_mc = consts.c*np.sqrt(
-            (self.pz-self.qOc*field_data.compute_Az(self.r, self.z))**2+
+            (self.pz-self.qOc*field_data.compute_Az(self.z))**2+
             (self.mc)**2
             )
 

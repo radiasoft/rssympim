@@ -1,13 +1,13 @@
-from rssympim.sympim_rz.maps import ptcl_maps, field_maps, similarity_maps
+from rssympim.sympim_1d.maps import ptcl_maps, field_maps, similarity_maps
 
 
 class integrator:
 
     def __init__(self, dt, frequencies):
         self.dt = dt
-        self.sim_maps = similarity_maps()
-        self.ptcl_maps = ptcl_maps(dt)
-        self.field_maps = field_maps(frequencies, dt)
+        self.sim_maps = similarity_maps.similarity_maps()
+        self.ptcl_maps = ptcl_maps.ptcl_maps(dt)
+        self.field_maps = field_maps.field_maps(frequencies, dt)
 
 
     def field_update(self, field_data):
@@ -25,10 +25,10 @@ class integrator:
         self.sim_maps.A_z_inverse(field_data, ptcl_data)
 
 
-    def finalize_fields(self):
+    def finalize_fields(self, field_data):
 
         # Add the delta-P to each mode
-        self.field_data.finalize_fields()
+        field_data.finalize_fields()
 
 
     def half_field_forward(self, field_data):
