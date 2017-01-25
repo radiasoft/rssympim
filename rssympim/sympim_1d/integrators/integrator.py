@@ -15,6 +15,7 @@ class integrator:
         # Update the fields then compute gamma to get a symplectic integrator
         self.field_maps.advance_forward(field_data)
 
+
     def particle_update(self, ptcl_data, field_data):
 
         # always compute the new gamma_mc after the field map update
@@ -34,6 +35,7 @@ class integrator:
     def half_field_forward(self, field_data):
 
         self.field_maps.half_advance_forward(field_data)
+
 
     def half_field_back(self, field_data):
 

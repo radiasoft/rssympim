@@ -41,10 +41,11 @@ class particle_data:
 
     def compute_gamma_mc(self, field_data):
 
-        self.gamma_mc = consts.c*np.sqrt(
+        self.gamma_mc = np.sqrt(
             (self.pz-self.qOc*field_data.compute_Az(self.z))**2+
             (self.mc)**2
             )
+
 
     def compute_ptcl_energy(self, field_data):
 

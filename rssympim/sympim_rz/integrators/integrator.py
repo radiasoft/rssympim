@@ -5,9 +5,9 @@ class integrator:
 
     def __init__(self, dt, frequencies):
         self.dt = dt
-        self.sim_maps = similarity_maps()
-        self.ptcl_maps = ptcl_maps(dt)
-        self.field_maps = field_maps(frequencies, dt)
+        self.sim_maps = similarity_maps.similarity_maps()
+        self.ptcl_maps = ptcl_maps.ptcl_maps(dt)
+        self.field_maps = field_maps.field_maps(frequencies, dt)
 
 
     def single_step(self, ptcl_data, field_data):

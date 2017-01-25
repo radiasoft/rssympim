@@ -33,8 +33,8 @@ class field_maps:
     def advance_forward(self, field_data):
 
         for idx in range(0,self.n_modes):
-            field_data.z[idx] = np.dot(self.rotation_matrices[idx],
-                                       field_data.z[idx])
+            field_data.mode_coords[idx] = np.dot(self.rotation_matrices[idx],
+                                       field_data.mode_coords[idx])
 
 
     def half_advance_forward(self, field_data):

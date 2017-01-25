@@ -1,11 +1,11 @@
-
+from rssympim.constants import constants
 
 class ptcl_maps:
 
     def __init__(self, _dt):
 
-        self.dt = _dt
-        self.halfdt = _dt/2.
+        self.dt = constants.c*_dt
+        self.halfdt = constants.c*_dt/2.
 
 
     def drift_z(self, ptcl_data):
@@ -14,7 +14,6 @@ class ptcl_maps:
         :param ptcl_data:
         :return:
         """
-
         ptcl_data.z += (ptcl_data.pz/ptcl_data.gamma_mc) * self.dt
 
 
@@ -24,5 +23,4 @@ class ptcl_maps:
         :param ptcl_data:
         :return:
         """
-
         ptcl_data.z += (ptcl_data.pz/ptcl_data.gamma_mc) * self.halfdt

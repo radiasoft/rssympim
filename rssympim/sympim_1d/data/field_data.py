@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import cos
+from numpy import cos, sin
 from rssympim.constants import constants
 # Commented out until MPI implementation is ready
 #from mpi4py import MPI
@@ -8,8 +8,8 @@ class field_data(object):
 
     def __init__(self, L, n_modes_z):
 
-        self.kz = 2.*np.pi*np.arange(1,n_modes_z+1)/L
-
+        self.kz = np.pi*np.arange(1,n_modes_z+1)/L
+        self.norm = np.sqrt(2./L)
         # Use linear strides for indexing the modes
         self.mode_coords = np.zeros((n_modes_z,2))
         self.omega = np.zeros(n_modes_z)
@@ -41,9 +41,9 @@ class field_data(object):
 
         for idx_z in range(0,self.n_modes_z):
             Az += self.mode_coords[idx_z,1]* \
-                  cos(self.kz[idx_z]*_z)*self.shape_function_z[idx_z]
+                  sin(self.kz[idx_z]*_z)*self.shape_function_z[idx_z]
 
-        return Az
+        return Az*self.norm
 
 
     def compute_dFzdQ(self, _z):
@@ -56,10 +56,21 @@ class field_data(object):
         dFzdQ = np.zeros(self.n_modes_z)
 
         for idx_z in range(0,n_ptcls):
-            dFzdQ += cos(self.kz*_z[idx_z])*self.shape_function_z
+            dFzdQ += cos(self.kz*_z[idx_z])*self.shape_function_z/self.kz
 
-        return dFzdQ
+        return dFzdQ*self.norm
 
+
+    def compute_Ez(self, _z):
+
+        n_ptcls = np.shape(_z)[0]
+        Ez = np.zeros(n_ptcls)
+
+        for idx_z in range(0, self.n_modes_z):
+            Ez += self.mode_coords[idx_z, 0] * \
+                  sin(self.kz[idx_z] * _z) * self.shape_function_z[idx_z]
+
+        return Ez*self.norm
 
     def finalize_fields(self):
         """

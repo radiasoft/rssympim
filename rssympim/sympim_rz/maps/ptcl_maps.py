@@ -60,7 +60,7 @@ class ptcl_maps:
 
         ptcl_data.z += (ptcl_data.pz/ptcl_data.gamma_mc) * self.halfdt
 
-    def half_angular_moment(self, ptcl_data):
+    def half_angular_momentum(self, ptcl_data):
         """
         Particles get half an angular momentum kick
         :param ptcl_data:
