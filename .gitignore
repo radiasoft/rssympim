@@ -64,3 +64,6 @@ target/
 
 # PyCharm data
 *.idea
+
+# File types we don’t need
+*.png
