@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import sin, cos
+from numpy import sin, cos, einsum
 from scipy.special import j0, j1, jn_zeros, fresnel
 # Commented out until MPI implementation is ready
 #from mpi4py import MPI
@@ -9,20 +9,19 @@ class field_data(object):
     def __init__(self, L, R, n_modes_r, n_modes_z):
 
         self.kr = jn_zeros(0, n_modes_r)/R
-        self.kz = 2.*np.pi*np.arange(1,n_modes_z+1)/L
+        self.oneOkr = 1./self.kr
+        self.kz = np.pi*np.arange(1,n_modes_z+1)/L
 
         # Use linear strides for indexing the modes
-        self.mode_coords = np.zeros((n_modes_r*n_modes_z,2))
+        self.mode_coords = np.zeros((n_modes_r,n_modes_z))
+        self.mode_momenta = np.zeros((n_modes_r, n_modes_z))
         self.omega = np.zeros(n_modes_r*n_modes_z)
         for idx_r in range(0,n_modes_r):
             for idx_z in range(0,n_modes_z):
                 self.omega[idx_r + (n_modes_r)*idx_z]= \
                     np.sqrt(self.kr[idx_r]**2 +self.kz[idx_z]**2)
 
-        self.delta_P = np.zeros(n_modes_r*n_modes_z)
-
-        self.n_modes_r = n_modes_r
-        self.n_modes_z = n_modes_z
+        self.delta_P = np.zeros((n_modes_r,n_modes_z))
 
         # Particles are tent functions with widths the narrowest of the
         # k-vectors for each direction. Default for now is to have the
@@ -53,13 +52,16 @@ class field_data(object):
         """
 
         # Use Horner's rule to minimize computation a bit
+
+        _xsqrd = _x*_x
+
         return np.where(_x < 4.14048,
-                        1.+_x*_x*(
-                            -1./4. + _x*_x*(
-                                1./64. + _x*_x*(
-                                    -1./2304. + _x*_x*(
-                                        1./147456. + _x*_x*(
-                                            -1./14745600 + _x*_x/2123366400.)
+                        1. + _xsqrd*(
+                            -1./4. + _xsqrd*(
+                                1./64. + _xsqrd*(
+                                    -1./2304. + _xsqrd*(
+                                        1./147456. + _xsqrd*(
+                                            -1./14745600 + _xsqrd/2123366400.)
                                         )
                                     )
                                 )
@@ -76,20 +78,22 @@ class field_data(object):
         """
 
         fresnelC, fresnelS = fresnel(self.root2opi*np.sqrt(_x))
+        _xsqrd = _x*_x
 
         # Use Horner's rule to minimize computation a bit
+        # This includes an error correction factor for the asymptotic form
         return np.where(_x < 4.14048,
-                 _x*(1. + _x*_x*(
-                     -1./12. + _x*_x*(
-                         1./320. + _x*_x*(
-                             -1./16128. + _x*_x*(
-                                 1./1327104. + _x*_x*(
-                                     -1./162201600. + _x*_x/27603763200.)
+                 _x*(1. + _xsqrd*(
+                     -1./12. + _xsqrd*(
+                         1./320. + _xsqrd*(
+                             -1./16128. + _xsqrd*(
+                                 1./1327104. + _xsqrd*(
+                                     -1./162201600. + _xsqrd/27603763200.)
                              )
                          )
                      )
                  )),
-                 self.root2*(fresnelC + fresnelS))
+                 self.root2*(fresnelC + fresnelS)-.414)
 
 
     def convolved_j0(self, _x):
@@ -139,16 +143,13 @@ class field_data(object):
         :param _z: longitudinal coordinates
         :return: Ar, a numpy array
         """
-        n_ptcls = np.shape(_r)[0]
-        Ar = np.zeros(n_ptcls)
 
-        for idx_r in range(0,self.n_modes_r):
-            self.convolution = \
-                self.convolved_j1(self.kr[idx_r]*_r)*self.ptcl_width_r
-            for idx_z in range(0,self.n_modes_z):
-                Ar += self.mode_coords[idx_r + self.n_modes_r*idx_z][1]* \
-                      self.convolution*\
-                      sin(self.kz[idx_z]*_z)*self.shape_function_z[idx_z]
+        kr_cross_r = einsum('i,j->ij', self.kr, _r)
+        kz_cross_z = einsum('i,j->ij', self.kz, _z)
+        convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
+        convolved_sin = einsum('ij, i->ij', sin(kz_cross_z), self.shape_function_z)
+
+        Ar = einsum('ij, ik, jk->k', self.mode_coords, convolved_j1, convolved_sin)
 
         return Ar
 
@@ -160,49 +161,37 @@ class field_data(object):
         :param _z: longitudinal coordinates
         :return: Az, a numpy array
         """
-        n_ptcls = np.shape(_r)[0]
-        Az = np.zeros(n_ptcls)
 
-        for idx_r in range(0,self.n_modes_r):
-            self.convolution = \
-                self.convolved_j0(self.kr[idx_r]*_r)/self.kr[idx_r]
-            for idx_z in range(0,self.n_modes_z):
-                Az += self.mode_coords[idx_r + self.n_modes_r*idx_z][1]* \
-                      self.convolution*\
-                      cos(self.kz[idx_z]*_z)*self.shape_function_z[idx_z]
+        kr_cross_r = einsum('i,j->ij', self.kr, _r)
+        kz_cross_z = einsum('i,j->ij', self.kz, _z)
+        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
+        convolved_cos = einsum('ij, i->ij', cos(kz_cross_z), self.shape_function_z)
+
+        Az = einsum('ij, ik, jk->k', self.mode_coords, convolved_j0, convolved_cos)
 
         return Az
 
 
     def compute_dFrdz(self, _r, _z):
 
-        n_ptcls = np.shape(_r)[0]
-        dFrdz = np.zeros(n_ptcls)
+        kr_cross_r = einsum('i,j->ij', self.kr, _r)
+        kz_cross_z = einsum('i,j->ij', self.kz, _z)
+        convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
+        convolved_sin = einsum('ij, i->ij', cos(kz_cross_z), self.shape_function_z)
 
-        for idx_r in range(0,self.n_modes_r):
-            self.convolution = \
-                self.int_convolved_j1(self.kr[idx_r]*_r)/self.kr[idx_r]
-            for idx_z in range(0,self.n_modes_z):
-                dFrdz += -self.kz[idx_z]*\
-                         self.mode_coords[idx_r + self.n_modes_r*idx_z][1]* \
-                         self.convolution*sin(self.kz[idx_z]*_z)*\
-                         self.shape_function_z[idx_z]
+        dFrdz = einsum('ij, ik, jk->k', self.mode_coords, convolved_j1, convolved_sin)
 
         return dFrdz
 
 
     def compute_dFzdr(self, _r, _z):
 
-        n_ptcls = np.shape(_r)[0]
-        dFzdr = np.zeros(n_ptcls)
+        kr_cross_r = einsum('i,j->ij', self.kr, _r)
+        kz_cross_z = einsum('i,j->ij', self.kz, _z)
+        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
+        convolved_cos= einsum('ij, i->ij', cos(kz_cross_z), self.shape_function_z)
 
-        for idx_r in range(0,self.n_modes_r):
-            self.convolution = \
-                self.int_convolved_j0(self.kr[idx_r]*_r)/self.kr[idx_r]
-            for idx_z in range(0,self.n_modes_z):
-                dFzdr += self.mode_coords[idx_r + self.n_modes_r*idx_z][1]* \
-                         self.convolution*\
-                         cos(self.kz[idx_z]*_z)*self.shape_function_z[idx_z]
+        dFzdr = einsum('ij, ik, jk->k', self.mode_coords, convolved_j0, convolved_cos)
 
         return dFzdr
 
@@ -214,15 +203,13 @@ class field_data(object):
         :param _z: longitudinal coordinates
         :return: Fz, a numpy array
         """
-        n_ptcls = np.shape(_r)[0]
-        dFzdQ = np.zeros(n_ptcls)
 
-        for idx_r in range(0,self.n_modes_r):
-            self.convolution = \
-                self.int_convolved_j0(self.kr[idx_r]*_r)/self.kr[idx_r]
-            for idx_z in range(0,self.n_modes_z):
-                dFzdQ += self.convolution*\
-                      cos(self.kz[idx_z]*_z)*self.shape_function_z[idx_z]
+        kr_cross_r = einsum('i,j->ij', self.kr, _r)
+        kz_cross_z = einsum('i,j->ij', self.kz, _z)
+        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
+        convolved_cos= einsum('ij, i->ij', cos(kz_cross_z), self.shape_function_z)
+
+        dFzdQ = einsum('ik, jk -> ij', convolved_j0, convolved_cos)
 
         return dFzdQ
 
@@ -234,15 +221,13 @@ class field_data(object):
         :param _z: longitudinal coordinates
         :return: Fr, a numpy array
         """
-        n_ptcls = np.shape(_r)[0]
-        dFrdQ = np.zeros(n_ptcls)
 
-        for idx_r in range(0,self.n_modes_r):
-            self.convolution = \
-                self.int_convolved_j1(self.kr[idx_r]*_r)/self.kr[idx_r]
-            for idx_z in range(0,self.n_modes_z):
-                dFrdQ += self.convolution*\
-                      sin(self.kz[idx_z]*_z)*self.shape_function_z[idx_z]
+        kr_cross_r = einsum('i,j->ij', self.kr, _r)
+        kz_cross_z = einsum('i,j->ij', self.kz, _z)
+        convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
+        convolved_sin = einsum('ij, i->ij', sin(kz_cross_z), self.shape_function_z)
+
+        dFrdQ = einsum('ik, jk -> ij', convolved_j1, convolved_sin)
 
         return dFrdQ
 
@@ -254,8 +239,8 @@ class field_data(object):
         """
         # Commented out until the MPI implementation is ready
         #self.comm.allreduce(self.delta_P, op=MPI.SUM, root=0)
-        self.mode_coords[:,0] += self.delta_P[:]
-        self.delta_P = np.zeros(self.n_modes_r*self.n_modes_z)
+        self.mode_momenta += self.delta_P
+        self.delta_P = np.zeros((self.n_modes_r,self.n_modes_z))
 
 
     def compute_energy(self):
@@ -264,5 +249,6 @@ class field_data(object):
         :return: numpy array with the field energy of each mode
         """
 
-        squares = self.mode_coords*self.mode_coords
-        return 0.5*(squares[:,0] + self.omega*squares[:,1])
+        Qsqrd = self.mode_coords*self.mode_coords
+        Psqrd = self.mode_momenta*self.mode_momenta
+        return 0.5*(Psqrd + self.omega*self.omega*Qsqrd)

@@ -30,7 +30,7 @@ class particle_data:
 
         self.qOm = self.q/self.m
         self.qOc = self.q/consts.c
-        self.mc = mass*consts.c
+        self.mc = self.m*consts.c
 
 
     def compute_gamma(self, field_data):

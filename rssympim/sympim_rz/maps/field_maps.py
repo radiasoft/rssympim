@@ -14,20 +14,34 @@ class field_maps:
         for idx in range(0, self.n_modes):
 
             # Compute the full rotation matrices
-            self.rotation_matrices[idx][0,0]= \
+            self.rotation_matrices[idx][0,0] = \
                 np.cos(self.phase_advance[idx])
-            self.rotation_matrices[idx][0,1]= \
+            self.rotation_matrices[idx][0,1] = \
                 _frequencies[idx]*np.sin(self.phase_advance[idx])
-            self.rotation_matrices[idx][1,0]= \
+            self.rotation_matrices[idx][1,0] = \
                 -np.sin(self.phase_advance[idx])/_frequencies[idx]
-            self.rotation_matrices[idx][1,1]=\
+            self.rotation_matrices[idx][1,1] =\
                 np.cos(self.phase_advance[idx])
 
             # Compute the half rotation matrices and their inverses
-            self.half_for_rot_mat[idx] = \
-                np.sqrt(self.rotation_matrices[idx])
-            self.half_bac_rot_mat[idx] = \
-                np.linalg.inv(self.half_for_rot_mat[idx])
+
+            self.half_for_rot_mat[idx][0,0] = \
+                np.cos(self.phase_advance[idx]*.5)
+            self.half_for_rot_mat[idx][0,1] = \
+                _frequencies[idx]*np.sin(self.phase_advance[idx]*.5)
+            self.half_for_rot_mat[idx][1,0] = \
+                -np.sin(self.phase_advance[idx]*.5)/_frequencies[idx]
+            self.half_for_rot_mat[idx][1,1] =\
+                np.cos(self.phase_advance[idx]*.5)
+
+            self.half_bac_rot_mat[idx][0, 0] = \
+                np.cos(-.5*self.phase_advance[idx])
+            self.half_bac_rot_mat[idx][0, 1] = \
+                _frequencies[idx] * np.sin(-.5*self.phase_advance[idx])
+            self.half_bac_rot_mat[idx][1, 0] = \
+                -np.sin(-.5*self.phase_advance[idx]) / _frequencies[idx]
+            self.half_bac_rot_mat[idx][1, 1] = \
+                np.cos(-.5*self.phase_advance[idx])
 
 
     def advance_forward(self, field_data):
