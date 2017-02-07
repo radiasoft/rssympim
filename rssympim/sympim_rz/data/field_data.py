@@ -15,10 +15,10 @@ class field_data(object):
         # Use linear strides for indexing the modes
         self.mode_coords = np.zeros((n_modes_r,n_modes_z))
         self.mode_momenta = np.zeros((n_modes_r, n_modes_z))
-        self.omega = np.zeros(n_modes_r*n_modes_z)
+        self.omega = np.zeros((n_modes_r,n_modes_z))
         for idx_r in range(0,n_modes_r):
             for idx_z in range(0,n_modes_z):
-                self.omega[idx_r + (n_modes_r)*idx_z]= \
+                self.omega[idx_r,idx_z]= \
                     np.sqrt(self.kr[idx_r]**2 +self.kz[idx_z]**2)
 
         self.delta_P = np.zeros((n_modes_r,n_modes_z))
@@ -31,11 +31,11 @@ class field_data(object):
         self.ptcl_width_r = .1/max(self.kr)
 
         self.shape_function_z = 2.*(1.-cos(self.kz*ptcl_width_z))/\
-                                (self.kz*self.kz*ptcl_width_z)
+                                (self.kz*self.kz*ptcl_width_z*ptcl_width_z)
 
         # The shape function for r cannot be analytically evaluated nicely
 
-        #some numerical constants to save computation time
+        #some numerical constants to save computation time & space
         self.root2 = np.sqrt(2.)
         self.root2opi = np.sqrt(2./np.pi)
         self.quarterpi = 0.25*np.pi
@@ -46,7 +46,7 @@ class field_data(object):
         Evaluating the integrals of j0 is extremely expensive, so the
         in-between is a piecewise, continuous function that approximates j0
         and can have its antiderivative evaluated quickly. To preserve
-        symplecticity, the integral has to come from
+        symplecticity, the integral has to come from an analytic form
         :param _x: an array of values
         :return: j0: approximate value of j0
         """

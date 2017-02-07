@@ -34,7 +34,11 @@ class particle_data:
 
 
     def compute_gamma(self, field_data):
-
+        """
+        Compute the individual particle gammas, mostly for the constant magnetic field part of the simulation.
+        :param field_data:
+        :return:
+        """
         self.gamma = np.sqrt((self.pr - self.qOm*
                               field_data.compute_Ar(self.r,self.z))**2 +\
                              (self.pz - self.qOm*
@@ -45,16 +49,25 @@ class particle_data:
 
 
     def compute_gamma_mc(self, field_data):
+        """
 
-        self.gamma_mc = consts.c*np.sqrt(
-            (self.pr - self.qOc*field_data.compute_Ar(self.r,self.z))**2 +
-            (self.pz - self.qOc*field_data.compute_Az(self.r, self.z))**2 +
-            self.ell**2/(self.m*self.r**2) + (self.mc)**2
-            )
+        :param field_data:
+        :return:
+        """
+
+        self.compute_gamma(field_data)
+        self.gamma_mc = self.gamma*self.mc
+
 
     def compute_ptcl_energy(self, field_data):
+        """
+        Returns the particle $\gamma m c^2$ values
+        :param field_data:
+        :return:
+        """
 
-        return self.compute_gamma_mc(field_data)*consts.c
+        self.compute_gamma_mc(field_data)
+        return self.gamma_mc*consts.c
 
 
     def r_boundaries(self):
