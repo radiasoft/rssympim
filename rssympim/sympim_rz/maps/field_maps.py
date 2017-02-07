@@ -7,9 +7,10 @@ class field_maps:
 
         self.phase_advance = _frequencies*_dt
         self.n_modes = np.shape(_frequencies)
-        self.rotation_matrices = np.zeros((self.n_modes,2,2))
-        self.half_for_rot_mat = np.zeros((self.n_modes,2,2))
-        self.half_bac_rot_mat = np.zeros((self.n_modes,2,2))
+        print 'number of modes =', self.n_modes
+        self.rotation_matrices = np.zeros((self.n_modes[0], self.n_modes[1],2,2))
+        self.half_for_rot_mat = np.zeros((self.n_modes[0], self.n_modes[1],2,2))
+        self.half_bac_rot_mat = np.zeros((self.n_modes[0], self.n_modes[1],2,2))
 
         for idx_1 in range(0, self.n_modes[0]):
             for idx_2 in range(0, self.n_modes[1]):
@@ -35,13 +36,13 @@ class field_maps:
                 self.half_for_rot_mat[idx_1, idx_2, 1,1] =\
                     np.cos(self.phase_advance[idx_1,idx_2]*.5)
 
-                self.half_bac_rot_mat[idx_1,idx_2,0, 0] = \
+                self.half_bac_rot_mat[idx_1,idx_2,0,0] = \
                     np.cos(-.5*self.phase_advance[idx_1,idx_2])
-                self.half_bac_rot_mat[idx_1,idx_2,0, 1] = \
+                self.half_bac_rot_mat[idx_1,idx_2,0,1] = \
                     _frequencies[idx_1,idx_2] * np.sin(-.5*self.phase_advance[idx_1,idx_2])
-                self.half_bac_rot_mat[idx_1,idx_2,1, 0] = \
+                self.half_bac_rot_mat[idx_1,idx_2,1,0] = \
                     -np.sin(-.5*self.phase_advance[idx_1,idx_2]) / _frequencies[idx_1,idx_2]
-                self.half_bac_rot_mat[idx_1,idx_2,1, 1] = \
+                self.half_bac_rot_mat[idx_1,idx_2,1,1] = \
                     np.cos(-.5*self.phase_advance[idx_1,idx_2])
 
 

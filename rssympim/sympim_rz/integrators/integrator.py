@@ -33,7 +33,7 @@ class integrator:
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 
         # Add the delta-P to each mode
-        self.field_data.finalize_fields()
+        field_data.finalize_fields()
 
 
     def half_field_forward(self, field_data):
