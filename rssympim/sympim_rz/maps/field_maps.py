@@ -7,7 +7,6 @@ class field_maps:
 
         self.phase_advance = _frequencies*_dt
         self.n_modes = np.shape(_frequencies)
-        print 'number of modes =', self.n_modes
         self.rotation_matrices = np.zeros((self.n_modes[0], self.n_modes[1],2,2))
         self.half_for_rot_mat = np.zeros((self.n_modes[0], self.n_modes[1],2,2))
         self.half_bac_rot_mat = np.zeros((self.n_modes[0], self.n_modes[1],2,2))
