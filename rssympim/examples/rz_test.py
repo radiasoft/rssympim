@@ -6,19 +6,22 @@ from matplotlib import pyplot as plt
 
 import time
 
-ptcl_data = particle_data.particle_data(1000, 1., 1.3, 33.5)
-fld_data  = field_data.field_data(5., 2., 25, 10)
 
-ptcl_data.r  = np.ones(1000)
-for idx in range(0, 1000):
-    ptcl_data.r[idx]*= idx*(4.)/1000 + .01
-ptcl_data.pr = ptcl_data.mc*np.arange(0.,.5,.5/1000)
-#ptcl_data.ell = ptcl_data.r*ptcl_data.pr
+n_ptcls = 10
 
-ptcl_data.z = np.zeros(1000)
-ptcl_data.pz = ptcl_data.mc*np.arange(0.,10.,10./1000)
+ptcl_data = particle_data.particle_data(n_ptcls, 1., 1.3, 33.5)
+fld_data  = field_data.field_data(5., 2., 5, 5)
 
-dt = 1./np.amax(fld_data.omega)
+ptcl_data.r  = np.ones(n_ptcls)
+for idx in range(0, n_ptcls):
+    ptcl_data.r[idx]*= idx*(4.)/n_ptcls + .01
+ptcl_data.pr = ptcl_data.mc*np.arange(0.,.5,.5/n_ptcls)
+ptcl_data.ell = ptcl_data.r*ptcl_data.pr*.1
+
+ptcl_data.z = np.zeros(n_ptcls)
+ptcl_data.pz = ptcl_data.mc*np.arange(0.,10.,10./n_ptcls)
+
+dt = .1/np.amax(fld_data.omega)
 
 my_integrator = integrator.integrator(dt, fld_data.omega)
 
@@ -32,10 +35,8 @@ t = []
 E.append(tot_energy)
 t.append(0.)
 
-n_steps = 10000
+n_steps = 1000
 step = 0
-
-my_integrator.half_field_back(fld_data)
 
 t0 = time.time()
 while step < n_steps:

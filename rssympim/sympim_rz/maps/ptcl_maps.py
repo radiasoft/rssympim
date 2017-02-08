@@ -33,7 +33,7 @@ class ptcl_maps:
         :return:
         """
 
-        ptcl_data.pr -= -2. * self.dt * \
+        ptcl_data.pr += self.dt * \
                         ptcl_data.ell * ptcl_data.ell / (ptcl_data.gamma_mc * (ptcl_data.r ** 3))
 
     def half_drift_r(self, ptcl_data):
@@ -63,5 +63,5 @@ class ptcl_maps:
         :return:
         """
 
-        ptcl_data.pr -= -self.dt * \
+        ptcl_data.pr += 0.5*self.dt * \
                         ptcl_data.ell * ptcl_data.ell / (ptcl_data.gamma_mc * (ptcl_data.r ** 3))
