@@ -6,6 +6,7 @@ class ptcl_maps:
         self.dt = _dt
         self.halfdt = _dt/ 2.
 
+
     def drift_r(self, ptcl_data):
         """
         Particles drift in r for a full step
@@ -17,6 +18,7 @@ class ptcl_maps:
         # Have to wrap particles around if they passed through the central axis
         ptcl_data.r_boundaries()
 
+
     def drift_z(self, ptcl_data):
         """
         Particles drift in z for a full step
@@ -26,6 +28,7 @@ class ptcl_maps:
 
         ptcl_data.z += (ptcl_data.pz / ptcl_data.gamma_mc) * self.dt
 
+
     def angular_momentum(self, ptcl_data):
         """
         Particles get an angular momentum kick
@@ -34,7 +37,8 @@ class ptcl_maps:
         """
 
         ptcl_data.pr += self.dt * \
-                        ptcl_data.ell * ptcl_data.ell / (ptcl_data.gamma_mc * (ptcl_data.r ** 3))
+                        ptcl_data.ell*ptcl_data.ell / (ptcl_data.gamma_mc * (ptcl_data.r ** 3))
+
 
     def half_drift_r(self, ptcl_data):
         """
@@ -47,6 +51,7 @@ class ptcl_maps:
         # Have to wrap particles around if they passed through the central axis
         ptcl_data.r_boundaries()
 
+
     def half_drift_z(self, ptcl_data):
         """
         Particles drift in z for a half step
@@ -56,6 +61,7 @@ class ptcl_maps:
 
         ptcl_data.z += (ptcl_data.pz / ptcl_data.gamma_mc) * self.halfdt
 
+
     def half_angular_momentum(self, ptcl_data):
         """
         Particles get half an angular momentum kick
@@ -64,4 +70,4 @@ class ptcl_maps:
         """
 
         ptcl_data.pr += 0.5*self.dt * \
-                        ptcl_data.ell * ptcl_data.ell / (ptcl_data.gamma_mc * (ptcl_data.r ** 3))
+                        ptcl_data.ell*ptcl_data.ell / (ptcl_data.gamma_mc * (ptcl_data.r ** 3))

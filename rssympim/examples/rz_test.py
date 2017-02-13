@@ -7,10 +7,12 @@ from matplotlib import pyplot as plt
 import time
 
 
-n_ptcls = 10
+n_ptcls = 18000
+n_r = 30
+n_z = 60
 
 ptcl_data = particle_data.particle_data(n_ptcls, 1., 1.3, 33.5)
-fld_data  = field_data.field_data(5., 2., 5, 5)
+fld_data  = field_data.field_data(5., 2., n_r, n_z)
 
 ptcl_data.r  = np.ones(n_ptcls)
 for idx in range(0, n_ptcls):
@@ -35,7 +37,7 @@ t = []
 E.append(tot_energy)
 t.append(0.)
 
-n_steps = 1000
+n_steps = 10
 step = 0
 
 t0 = time.time()
@@ -49,8 +51,7 @@ while step < n_steps:
     field_energies = fld_data.compute_energy()
 
     step += 1
-    if step%10==0:
-        print 'simulation completed step', str(step)
+    print 'simulation completed step', str(step)
 
     tot_energy = np.sum(particle_energies) + np.sum(field_energies)
 

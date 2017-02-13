@@ -18,9 +18,9 @@ class field_maps:
                 self.rotation_matrices[idx_1,idx_2,0,0] = \
                     np.cos(self.phase_advance[idx_1,idx_2])
                 self.rotation_matrices[idx_1,idx_2,0,1] = \
-                    _frequencies[idx_1,idx_2]*np.sin(self.phase_advance[idx_1,idx_2])
-                self.rotation_matrices[idx_1,idx_2,1,0] = \
                     -np.sin(self.phase_advance[idx_1,idx_2])/_frequencies[idx_1,idx_2]
+                self.rotation_matrices[idx_1,idx_2,1,0] = \
+                    np.sin(self.phase_advance[idx_1,idx_2])*_frequencies[idx_1,idx_2]
                 self.rotation_matrices[idx_1,idx_2,1,1] =\
                     np.cos(self.phase_advance[idx_1,idx_2])
 
@@ -29,18 +29,18 @@ class field_maps:
                 self.half_for_rot_mat[idx_1, idx_2, 0,0] = \
                     np.cos(self.phase_advance[idx_1, idx_2]*.5)
                 self.half_for_rot_mat[idx_1, idx_2, 0,1] = \
-                    _frequencies[idx_1,idx_2]*np.sin(self.phase_advance[idx_1,idx_2]*.5)
-                self.half_for_rot_mat[idx_1, idx_2, 1,0] = \
                     -np.sin(self.phase_advance[idx_1,idx_2]*.5)/_frequencies[idx_1,idx_2]
+                self.half_for_rot_mat[idx_1, idx_2, 1,0] = \
+                    np.sin(self.phase_advance[idx_1,idx_2]*.5)*_frequencies[idx_1,idx_2]
                 self.half_for_rot_mat[idx_1, idx_2, 1,1] =\
                     np.cos(self.phase_advance[idx_1,idx_2]*.5)
 
                 self.half_bac_rot_mat[idx_1,idx_2,0,0] = \
                     np.cos(-.5*self.phase_advance[idx_1,idx_2])
                 self.half_bac_rot_mat[idx_1,idx_2,0,1] = \
-                    _frequencies[idx_1,idx_2] * np.sin(-.5*self.phase_advance[idx_1,idx_2])
+                    -np.sin(-.5*self.phase_advance[idx_1,idx_2])/_frequencies[idx_1,idx_2]
                 self.half_bac_rot_mat[idx_1,idx_2,1,0] = \
-                    -np.sin(-.5*self.phase_advance[idx_1,idx_2]) / _frequencies[idx_1,idx_2]
+                    np.sin(-.5*self.phase_advance[idx_1,idx_2])*_frequencies[idx_1,idx_2]
                 self.half_bac_rot_mat[idx_1,idx_2,1,1] = \
                     np.cos(-.5*self.phase_advance[idx_1,idx_2])
 
