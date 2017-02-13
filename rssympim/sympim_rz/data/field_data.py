@@ -173,7 +173,7 @@ class field_data(object):
         convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
         convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]
+        modeQ = self.mode_coords[:,:,1]*self.mode_norms
 
         Ar = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)
 
@@ -193,7 +193,7 @@ class field_data(object):
         convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
         convolved_cos = einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]
+        modeQ = self.mode_coords[:,:,1]*self.mode_norms
 
         Az = einsum('ik, ij, kj->j', modeQ, convolved_j0, convolved_cos)
 
@@ -207,7 +207,7 @@ class field_data(object):
         convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
         convolved_sin = einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]
+        modeQ = self.mode_coords[:,:,1]*self.mode_norms
 
         dFrdz = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)
 
@@ -221,7 +221,7 @@ class field_data(object):
         convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
         convolved_cos= einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]
+        modeQ = self.mode_coords[:,:,1]*self.mode_norms
 
         dFzdr = einsum('ik, ij, kj->j', modeQ, convolved_j0, convolved_cos)
 
@@ -242,7 +242,7 @@ class field_data(object):
         convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
         convolved_cos= einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
-        dFzdQ = einsum('ij, kj -> ik', convolved_j0, convolved_cos)
+        dFzdQ = einsum('ij, kj, ik -> ik', convolved_j0, convolved_cos, self.mode_norms)
 
         return dFzdQ
 
@@ -261,7 +261,7 @@ class field_data(object):
         convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
         convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
 
-        dFrdQ = einsum('ij, kj -> ik', convolved_j1, convolved_sin)
+        dFrdQ = einsum('ij, kj, ik -> ik', convolved_j1, convolved_sin, self.mode_norms)
 
         return dFrdQ
 
