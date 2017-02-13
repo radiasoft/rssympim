@@ -34,11 +34,10 @@ macro_weight = n_electrons/n_macro_ptcls
 n_r_modes = 5
 n_z_modes = 5
 
-
-
+# Create simulation objects
 ptcl_data = particle_data.particle_data(n_macro_ptcls, charge, mass, macro_weight)
 fld_data = field_data.field_data(l_r, l_z, n_r_modes, n_z_modes)
-#fld_data.mode_coords = np.ones((n_r_modes, n_z_modes, 2)) * 1.e20
+fld_data.mode_coords = np.ones((n_r_modes, n_z_modes, 2))
 
 ptcl_data.r = np.ones(n_macro_ptcls)
 ptcl_data.z = np.zeros(n_macro_ptcls)
@@ -57,7 +56,7 @@ E = []
 t = []
 
 E0 = tot_energy
-n_steps = 7
+n_steps = 5
 step = 1
 
 dt0 = 1./np.amax(fld_data.omega)
@@ -67,7 +66,7 @@ while step < n_steps:
     # Generate the initial conditions
     ptcl_data = particle_data.particle_data(n_macro_ptcls, charge, mass, macro_weight)
     fld_data = field_data.field_data(l_r, l_z, n_r_modes, n_z_modes)
-    #fld_data.mode_coords = np.ones((n_r_modes, n_z_modes, 2)) * 1.e20
+    fld_data.mode_coords = np.ones((n_r_modes, n_z_modes, 2))
 
     ptcl_data.r = np.ones(n_macro_ptcls)
     for idx in range(0, n_macro_ptcls):
@@ -85,16 +84,14 @@ while step < n_steps:
 
     ptcl_data.compute_gamma(fld_data)
 
-    # Integrate ten steps
-    for idx in range(0,10):
+    # Integrate one hundred steps
+    for idx in range(0,100):
 
         my_integrator.single_step(ptcl_data, fld_data)
 
     particle_energies = ptcl_data.compute_ptcl_energy(fld_data)
     field_energies = fld_data.compute_energy()
     tot_energy = np.sum(field_energies) + np.sum(particle_energies)
-
-    print tot_energy
 
     step += 1
 
@@ -104,10 +101,8 @@ while step < n_steps:
 t = np.array(t)
 E = np.array(E)
 
-print E
-
 plt.loglog(t, E)
-plt.loglog(t, 1/(t*t*t))
+#plt.loglog(t, 1/(t*t*t))
 plt.xlabel(r'$1/d\tau [cm^{-1}]$')
 plt.ylabel(r'$|\Delta E|$')
 plt.tight_layout()
