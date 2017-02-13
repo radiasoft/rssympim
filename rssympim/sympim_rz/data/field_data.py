@@ -23,21 +23,27 @@ class field_data(object):
 
     def __init__(self, L, R, n_modes_r, n_modes_z):
 
-        self.kr = jn_zeros(0, n_modes_r)/R
-        self.oneOkr = 1./self.kr
-        self.kz = np.pi*np.arange(1,n_modes_z+1)/L
-
         self.n_modes_r = n_modes_r
         self.n_modes_z = n_modes_z
 
-        # Use linear strides for indexing the modes
+        self.kr = jn_zeros(0, self.n_modes_r)/R
+        self.oneOkr = 1./self.kr
+        self.kz = np.pi*np.arange(1,self.n_modes_z+1)/L
+
+        # Needed for the normalization
+        zero_zeros = jn_zeros(0, self.n_modes_r)
+
         self.mode_coords = np.zeros((self.n_modes_r,self.n_modes_z, 2))
+        self.mode_norms = np.ones((self.n_modes_r, self.n_modes_z))
         #self.mode_momenta = np.zeros((n_modes_r, n_modes_z))
         self.omega = np.zeros((self.n_modes_r,self.n_modes_z))
         for idx_r in range(0,self.n_modes_r):
             for idx_z in range(0,self.n_modes_z):
                 self.omega[idx_r,idx_z]= \
                     np.sqrt(self.kr[idx_r]**2 +self.kz[idx_z]**2)
+                self.mode_norms[idx_r, idx_z] = \
+                    np.sqrt(.25*R*R*L*j1(zero_zeros[idx_r])*j1(zero_zeros[idx_r]))
+
 
         self.delta_P = np.zeros((self.n_modes_r,self.n_modes_z))
 
@@ -45,8 +51,8 @@ class field_data(object):
         # k-vectors for each direction. Default for now is to have the
         # particle widths be half the shortest wavelength, which should
         # resolve the wave physics reasonably well.
-        ptcl_width_z = .1/max(self.kz)
-        self.ptcl_width_r = .1/max(self.kr)
+        ptcl_width_z = 1./max(self.kz)
+        self.ptcl_width_r = 1./max(self.kr)
 
         self.shape_function_z = 2.*(1.-cos(self.kz*ptcl_width_z))/\
                                 (self.kz*self.kz*ptcl_width_z*ptcl_width_z)
