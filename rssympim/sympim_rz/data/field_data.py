@@ -35,7 +35,7 @@ class field_data(object):
 
         self.mode_coords = np.zeros((self.n_modes_r,self.n_modes_z, 2))
         self.mode_norms = np.ones((self.n_modes_r, self.n_modes_z))
-        #self.mode_momenta = np.zeros((n_modes_r, n_modes_z))
+
         self.omega = np.zeros((self.n_modes_r,self.n_modes_z))
         for idx_r in range(0,self.n_modes_r):
             for idx_z in range(0,self.n_modes_z):
@@ -285,4 +285,5 @@ class field_data(object):
 
         Qsqrd = self.mode_coords[:,:,1]*self.mode_coords[:,:,1]
         Psqrd = self.mode_coords[:,:,0]*self.mode_coords[:,:,0]
+
         return 0.5*(Psqrd + self.omega*self.omega*Qsqrd)
