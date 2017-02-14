@@ -42,7 +42,7 @@ class field_data(object):
                 self.omega[idx_r,idx_z]= \
                     np.sqrt(self.kr[idx_r]**2 +self.kz[idx_z]**2)
                 self.mode_norms[idx_r, idx_z] = \
-                    np.sqrt(.25*R*R*L*j1(zero_zeros[idx_r])*j1(zero_zeros[idx_r]))
+                    1/np.sqrt(.25*R*R*L*j1(zero_zeros[idx_r])*j1(zero_zeros[idx_r]))
 
 
         self.delta_P = np.zeros((self.n_modes_r,self.n_modes_z))
