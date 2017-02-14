@@ -43,7 +43,7 @@ class particle_data:
                               field_data.compute_Ar(self.r,self.z))**2 +\
                              (self.pz - self.qOc*
                               field_data.compute_Az(self.r, self.z))**2 +\
-                             self.ell**2/(self.mc*self.r**2) +
+                             self.ell**2/(self.r**2) +
                              (self.mc)**2
                              )/(self.mc)
 
