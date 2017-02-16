@@ -65,61 +65,6 @@ class field_data(object):
         self.quarterpi = 0.25*np.pi
 
 
-    def my_j0(self, _x):
-        """
-        Evaluating the integrals of j0 is extremely expensive, so the
-        in-between is a piecewise, continuous function that approximates j0
-        and can have its antiderivative evaluated quickly. To preserve
-        symplecticity, the integral has to come from an analytic form
-        :param _x: an array of values
-        :return: j0: approximate value of j0
-        """
-
-        # Use Horner's rule to minimize computation a bit
-
-        _xsqrd = _x*_x
-
-        return np.where(_x < 4.14048,
-                        1. + _xsqrd*(
-                            -1./4. + _xsqrd*(
-                                1./64. + _xsqrd*(
-                                    -1./2304. + _xsqrd*(
-                                        1./147456. + _xsqrd*(
-                                            -1./14745600 + _xsqrd/2123366400.)
-                                        )
-                                    )
-                                )
-                            ),
-                        self.root2opi/np.sqrt(_x)*np.cos(_x-self.quarterpi))
-
-
-    def int_my_j0(self,_x):
-        """
-        Provide an analytic estimate for the integral of j0 using the
-        antiderivatives of my_j0.
-        :param _x:
-        :return: int_j0: approximate value of the integral of j0
-        """
-
-        fresnelC, fresnelS = fresnel(self.root2opi*np.sqrt(_x))
-        _xsqrd = _x*_x
-
-        # Use Horner's rule to minimize computation a bit
-        # This includes an error correction factor for the asymptotic form
-        return np.where(_x < 4.14048,
-                 _x*(1. + _xsqrd*(
-                     -1./12. + _xsqrd*(
-                         1./320. + _xsqrd*(
-                             -1./16128. + _xsqrd*(
-                                 1./1327104. + _xsqrd*(
-                                     -1./162201600. + _xsqrd/27603763200.)
-                             )
-                         )
-                     )
-                 )),
-                 self.root2*(fresnelC + fresnelS)-.414)
-
-
     def convolved_j0(self, _x):
         """
         Use Romberg integration to approximate the convolution integral
@@ -128,9 +73,9 @@ class field_data(object):
         :return:
         """
 
-        return (self.my_j0(_x-.5*self.ptcl_width_r) +
-                4.*self.my_j0(_x) +
-                self.my_j0(_x+.5*self.ptcl_width_r))/6.
+        return (j0(_x-.5*self.ptcl_width_r) +
+                4.*j0(_x) +
+                j0(_x+.5*self.ptcl_width_r))/6.
 
 
     def convolved_j1(self, _x):
@@ -144,13 +89,6 @@ class field_data(object):
         return (j1(_x-.5*self.ptcl_width_r) +
                 4.*j1(_x) +
                 j1(_x+.5*self.ptcl_width_r))/6.
-
-
-    def int_convolved_j0(self, _x):
-
-        return (self.int_my_j0(_x-.5*self.ptcl_width_r) +
-                4.*self.int_my_j0(_x) +
-                self.int_my_j0(_x+.5*self.ptcl_width_r))/6.
 
 
     def int_convolved_j1(self, _x):
