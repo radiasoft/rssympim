@@ -122,6 +122,40 @@ class field_data(object):
         return Ar
 
 
+    def compute_dFrdz(self, r, z, qOc):
+
+        kr_cross_r = einsum('i,j->ij', self.kr, r)
+        kz_cross_z = einsum('k,j->kj', self.kz, z)
+        convolved_j1 = einsum('ij, i->ij', self.int_convolved_j1(kr_cross_r), self.oneOkr)
+        convolved_sin = einsum('kj, k->kj', cos(kz_cross_z), self.kz*self.shape_function_z)
+
+        modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
+
+        dFrdz = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)*qOc
+
+        return dFrdz
+
+
+    def compute_dFrdQ(self, r, z, qOc):
+        """
+        Evaluate Fr for a set of particles
+        :param _r: radial coordinates
+        :param _z: longitudinal coordinates
+        :return: Fr, a numpy array
+        """
+
+        # Unlike the above functions, this sums over the particles not the modes
+        kr_cross_r = einsum('i,j->ij', self.kr, r)
+        kz_cross_z = einsum('k,j->kj', self.kz, z)
+        convolved_j1 = einsum('ij, i->ij', self.int_convolved_j1(kr_cross_r), self.oneOkr)
+        convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
+
+        dFrdQ = einsum('ij, kj, ik, j -> ik', convolved_j1, convolved_sin,
+                       self.mode_mass*self.radial_coeff, qOc)
+
+        return dFrdQ
+
+
     def compute_Az(self, r, z, qOc):
         """
         Evaluate Az for a set of particles
@@ -142,25 +176,11 @@ class field_data(object):
         return Az
 
 
-    def compute_dFrdz(self, r, z, qOc):
-
-        kr_cross_r = einsum('i,j->ij', self.kr, r)
-        kz_cross_z = einsum('k,j->kj', self.kz, z)
-        convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
-        convolved_sin = einsum('kj, k->kj', cos(kz_cross_z), self.kz*self.shape_function_z)
-
-        modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
-
-        dFrdz = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)*qOc
-
-        return dFrdz
-
-
     def compute_dFzdr(self, r, z, qOc):
 
         kr_cross_r = einsum('i,j->ij', self.kr, r)
         kz_cross_z = einsum('k,j->kj', self.kz, z)
-        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
+        convolved_j0 = -self.convolved_j1(kr_cross_r)
         convolved_cos= einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass
@@ -182,31 +202,11 @@ class field_data(object):
         kr_cross_r = einsum('i,j->ij', self.kr, r)
         kz_cross_z = einsum('k,j->kj', self.kz, z)
         convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
-        convolved_cos= einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
+        convolved_cos= einsum('kj, k->kj', -sin(kz_cross_z), self.shape_function_z/self.kz)
 
         dFzdQ = einsum('ij, kj, ik, j -> ik', convolved_j0, convolved_cos, self.mode_mass, qOc)
 
         return dFzdQ
-
-
-    def compute_dFrdQ(self, r, z, qOc):
-        """
-        Evaluate Fr for a set of particles
-        :param _r: radial coordinates
-        :param _z: longitudinal coordinates
-        :return: Fr, a numpy array
-        """
-
-        # Unlike the above functions, this sums over the particles not the modes
-        kr_cross_r = einsum('i,j->ij', self.kr, r)
-        kz_cross_z = einsum('k,j->kj', self.kz, z)
-        convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
-        convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
-
-        dFrdQ = einsum('ij, kj, ik, j -> ik', convolved_j1, convolved_sin,
-                       self.mode_mass*self.radial_coeff, qOc)
-
-        return dFrdQ
 
 
     def finalize_fields(self):
