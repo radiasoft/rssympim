@@ -23,17 +23,17 @@ class integrator:
         # M_ell A_r D_r A_r^-1 A_z D_z A_z^-1 A_r D_r A_r^-1 M_ell
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 
-        self.sim_maps.A_r_inverse(field_data, ptcl_data)
-        self.ptcl_maps.half_drift_r(ptcl_data)
         self.sim_maps.A_r(field_data, ptcl_data)
+        self.ptcl_maps.half_drift_r(ptcl_data)
+        self.sim_maps.A_r_inverse(field_data, ptcl_data)
 
         self.sim_maps.A_z_inverse(field_data, ptcl_data)
         self.ptcl_maps.drift_z(ptcl_data)
         self.sim_maps.A_z(field_data, ptcl_data)
 
-        self.sim_maps.A_r_inverse(field_data, ptcl_data)
-        self.ptcl_maps.half_drift_r(ptcl_data)
         self.sim_maps.A_r(field_data, ptcl_data)
+        self.ptcl_maps.half_drift_r(ptcl_data)
+        self.sim_maps.A_r_inverse(field_data, ptcl_data)
 
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 

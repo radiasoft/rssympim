@@ -25,7 +25,7 @@ class particle_data:
 
         self.weight = weight
 
-        self.q = self.weight*charge
+        self.q = self.weight*charge*np.ones(n_particles)
         self.m = np.abs(self.weight*mass)
 
         self.qOm = self.q/self.m
@@ -39,10 +39,8 @@ class particle_data:
         :param field_data:
         :return:
         """
-        self.gamma = np.sqrt((self.pr - self.qOc*
-                              field_data.compute_Ar(self.r,self.z))**2 +\
-                             (self.pz - self.qOc*
-                              field_data.compute_Az(self.r, self.z))**2 +\
+        self.gamma = np.sqrt((self.pr - field_data.compute_Ar(self.r,self.z, self.qOc))**2 +\
+                             (self.pz -  field_data.compute_Az(self.r, self.z, self.qOc))**2 +\
                              self.ell**2/(self.r**2) +
                              (self.mc)**2
                              )/(self.mc)

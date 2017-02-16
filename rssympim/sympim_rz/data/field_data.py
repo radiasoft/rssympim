@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import sin, cos, einsum
-from scipy.special import j0, j1, jn_zeros, fresnel
+from scipy.special import j0, j1, jn_zeros
+from rssympim.constants import constants as consts
 # Commented out until MPI implementation is ready
 #from mpi4py import MPI
 
@@ -34,15 +35,18 @@ class field_data(object):
         zero_zeros = jn_zeros(0, self.n_modes_r)
 
         self.mode_coords = np.zeros((self.n_modes_r,self.n_modes_z, 2))
-        self.mode_norms = np.ones((self.n_modes_r, self.n_modes_z))
+        self.mode_mass = np.ones((self.n_modes_r, self.n_modes_z))
+        self.radial_coeff = np.ones((self.n_modes_r, self.n_modes_z))
 
         self.omega = np.zeros((self.n_modes_r,self.n_modes_z))
         for idx_r in range(0,self.n_modes_r):
             for idx_z in range(0,self.n_modes_z):
                 self.omega[idx_r,idx_z]= \
                     np.sqrt(self.kr[idx_r]**2 +self.kz[idx_z]**2)
-                self.mode_norms[idx_r, idx_z] = \
-                    1/np.sqrt(.25*R*R*L*j1(zero_zeros[idx_r])*j1(zero_zeros[idx_r]))
+                self.radial_coeff[idx_r, idx_z] = self.kz[idx_z]/self.kr[idx_r]
+                self.mode_mass[idx_r, idx_z] = \
+                    np.sqrt(consts.c/
+                            (.25*R*R*L*(j1(zero_zeros[idx_r])**2)*(1 + self.kz[idx_z]**2/self.kr[idx_r]**2)))
 
 
         self.delta_P = np.zeros((self.n_modes_r,self.n_modes_z))
@@ -98,7 +102,7 @@ class field_data(object):
                 j0(_x+.5*self.ptcl_width_r))/6.
 
 
-    def compute_Ar(self, _r, _z):
+    def compute_Ar(self, r, z, qOc):
         """
         Evaluate Ar for a set of particles
         :param _r: radial coordinates
@@ -106,19 +110,19 @@ class field_data(object):
         :return: Ar, a numpy array
         """
 
-        kr_cross_r = einsum('i,j->ij', self.kr, _r)
-        kz_cross_z = einsum('k,j->kj', self.kz, _z)
+        kr_cross_r = einsum('i,j->ij', self.kr, r)
+        kz_cross_z = einsum('k,j->kj', self.kz, z)
         convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
         convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]*self.mode_norms
+        modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
 
-        Ar = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)
+        Ar = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)*qOc
 
         return Ar
 
 
-    def compute_Az(self, _r, _z):
+    def compute_Az(self, r, z, qOc):
         """
         Evaluate Az for a set of particles
         :param _r: radial coordinates
@@ -126,47 +130,47 @@ class field_data(object):
         :return: Az, a numpy array
         """
 
-        kr_cross_r = einsum('i,j->ij', self.kr, _r)
-        kz_cross_z = einsum('k,j->kj', self.kz, _z)
+        kr_cross_r = einsum('i,j->ij', self.kr, r)
+        kz_cross_z = einsum('k,j->kj', self.kz, z)
         convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
         convolved_cos = einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]*self.mode_norms
+        modeQ = self.mode_coords[:,:,1]*self.mode_mass
 
-        Az = einsum('ik, ij, kj->j', modeQ, convolved_j0, convolved_cos)
+        Az = einsum('ik, ij, kj->j', modeQ, convolved_j0, convolved_cos)*qOc
 
         return Az
 
 
-    def compute_dFrdz(self, _r, _z):
+    def compute_dFrdz(self, r, z, qOc):
 
-        kr_cross_r = einsum('i,j->ij', self.kr, _r)
-        kz_cross_z = einsum('k,j->kj', self.kz, _z)
+        kr_cross_r = einsum('i,j->ij', self.kr, r)
+        kz_cross_z = einsum('k,j->kj', self.kz, z)
         convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
-        convolved_sin = einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
+        convolved_sin = einsum('kj, k->kj', cos(kz_cross_z), self.kz*self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]*self.mode_norms
+        modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
 
-        dFrdz = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)
+        dFrdz = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)*qOc
 
         return dFrdz
 
 
-    def compute_dFzdr(self, _r, _z):
+    def compute_dFzdr(self, r, z, qOc):
 
-        kr_cross_r = einsum('i,j->ij', self.kr, _r)
-        kz_cross_z = einsum('k,j->kj', self.kz, _z)
+        kr_cross_r = einsum('i,j->ij', self.kr, r)
+        kz_cross_z = einsum('k,j->kj', self.kz, z)
         convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
         convolved_cos= einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]*self.mode_norms
+        modeQ = self.mode_coords[:,:,1]*self.mode_mass
 
-        dFzdr = einsum('ik, ij, kj->j', modeQ, convolved_j0, convolved_cos)
+        dFzdr = einsum('ik, ij, kj->j', modeQ, convolved_j0, convolved_cos)*qOc
 
         return dFzdr
 
 
-    def compute_dFzdQ(self, _r, _z):
+    def compute_dFzdQ(self, r, z, qOc):
         """
         Evaluate Fz for a set of particles
         :param _r: radial coordinates
@@ -175,17 +179,17 @@ class field_data(object):
         """
 
         # Unlike the above functions, this sums over the particles not the modes
-        kr_cross_r = einsum('i,j->ij', self.kr, _r)
-        kz_cross_z = einsum('k,j->kj', self.kz, _z)
+        kr_cross_r = einsum('i,j->ij', self.kr, r)
+        kz_cross_z = einsum('k,j->kj', self.kz, z)
         convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
         convolved_cos= einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
-        dFzdQ = einsum('ij, kj, ik -> ik', convolved_j0, convolved_cos, self.mode_norms)
+        dFzdQ = einsum('ij, kj, ik, j -> ik', convolved_j0, convolved_cos, self.mode_mass, qOc)
 
         return dFzdQ
 
 
-    def compute_dFrdQ(self, _r, _z):
+    def compute_dFrdQ(self, r, z, qOc):
         """
         Evaluate Fr for a set of particles
         :param _r: radial coordinates
@@ -194,12 +198,13 @@ class field_data(object):
         """
 
         # Unlike the above functions, this sums over the particles not the modes
-        kr_cross_r = einsum('i,j->ij', self.kr, _r)
-        kz_cross_z = einsum('k,j->kj', self.kz, _z)
+        kr_cross_r = einsum('i,j->ij', self.kr, r)
+        kz_cross_z = einsum('k,j->kj', self.kz, z)
         convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
         convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
 
-        dFrdQ = einsum('ij, kj, ik -> ik', convolved_j1, convolved_sin, self.mode_norms)
+        dFrdQ = einsum('ij, kj, ik, j -> ik', convolved_j1, convolved_sin,
+                       self.mode_mass*self.radial_coeff, qOc)
 
         return dFrdQ
 
