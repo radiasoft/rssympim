@@ -69,5 +69,5 @@ class ptcl_maps:
         :return:
         """
 
-        ptcl_data.pr += 0.5*self.dt * \
+        ptcl_data.pr += self.halfdt * \
                         ptcl_data.ell*ptcl_data.ell / (ptcl_data.gamma_mc * (ptcl_data.r ** 3))
