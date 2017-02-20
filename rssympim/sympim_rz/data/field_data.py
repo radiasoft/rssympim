@@ -19,6 +19,7 @@ from rssympim.constants import constants as consts
 #
 # This improves readability and makes debugging easier.
 #
+# # #
 
 class field_data(object):
 
@@ -46,7 +47,7 @@ class field_data(object):
                 self.radial_coeff[idx_r, idx_z] = self.kz[idx_z]/self.kr[idx_r]
                 self.mode_mass[idx_r, idx_z] = \
                     np.sqrt(consts.c/
-                            (.25*R*R*L*(j1(zero_zeros[idx_r])**2)*(1 + self.kz[idx_z]**2/self.kr[idx_r]**2)))
+                            (.25*R*R*L*(j1(zero_zeros[idx_r])**2)*(1 + (self.kz[idx_z]/self.kr[idx_r])**2)))
 
 
         self.delta_P = np.zeros((self.n_modes_r,self.n_modes_z))
@@ -69,7 +70,7 @@ class field_data(object):
         self.quarterpi = 0.25*np.pi
 
 
-    def convolved_j0(self, _x):
+    def convolved_j0(self, _x, delta_x):
         """
         Use Romberg integration to approximate the convolution integral
         with j0 to fourth order in the particle size
@@ -77,12 +78,12 @@ class field_data(object):
         :return:
         """
 
-        return (j0(_x-.5*self.ptcl_width_r) +
+        return (j0(_x-.5*delta_x) +
                 4.*j0(_x) +
-                j0(_x+.5*self.ptcl_width_r))/6.
+                j0(_x+.5*delta_x))/6.
 
 
-    def convolved_j1(self, _x):
+    def convolved_j1(self, _x, delta_x):
         """
         Use Romberg integration to approximate the convolution integral
         with j1 to fourth order in the particle size
@@ -90,16 +91,16 @@ class field_data(object):
         :return:
         """
 
-        return (j1(_x-.5*self.ptcl_width_r) +
+        return (j1(_x-.5*delta_x) +
                 4.*j1(_x) +
-                j1(_x+.5*self.ptcl_width_r))/6.
+                j1(_x+.5*delta_x))/6.
 
 
-    def int_convolved_j1(self, _x):
+    def int_convolved_j1(self, _x, delta_x):
 
-        return -1.*(j0(_x-.5*self.ptcl_width_r) +
+        return -1.*(j0(_x-.5*delta_x) +
                 4.*j0(_x) +
-                j0(_x+.5*self.ptcl_width_r))/6.
+                j0(_x+.5*delta_x))/6.
 
 
     def compute_Ar(self, r, z, qOc):
@@ -112,7 +113,9 @@ class field_data(object):
 
         kr_cross_r = einsum('i,j->ij', self.kr, r)
         kz_cross_z = einsum('k,j->kj', self.kz, z)
-        convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r), self.oneOkr)
+        delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
+        delta_u = einsum('i, j -> ij', self.kr, delta_r)
+        convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r, delta_u), self.oneOkr)
         convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
@@ -126,7 +129,9 @@ class field_data(object):
 
         kr_cross_r = einsum('i,j->ij', self.kr, r)
         kz_cross_z = einsum('k,j->kj', self.kz, z)
-        convolved_j1 = einsum('ij, i->ij', self.int_convolved_j1(kr_cross_r), self.oneOkr)
+        delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
+        delta_u = einsum('i, j -> ij', self.kr, delta_r)
+        convolved_j1 = einsum('ij, i->ij', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
         convolved_sin = einsum('kj, k->kj', cos(kz_cross_z), self.kz*self.shape_function_z)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
@@ -147,7 +152,9 @@ class field_data(object):
         # Unlike the above functions, this sums over the particles not the modes
         kr_cross_r = einsum('i,j->ij', self.kr, r)
         kz_cross_z = einsum('k,j->kj', self.kz, z)
-        convolved_j1 = einsum('ij, i->ij', self.int_convolved_j1(kr_cross_r), self.oneOkr)
+        delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
+        delta_u = einsum('i, j -> ij', self.kr, delta_r)
+        convolved_j1 = einsum('ij, i->ij', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
         convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
 
         dFrdQ = einsum('ij, kj, ik, j -> ik', convolved_j1, convolved_sin,
@@ -166,7 +173,9 @@ class field_data(object):
 
         kr_cross_r = einsum('i,j->ij', self.kr, r)
         kz_cross_z = einsum('k,j->kj', self.kz, z)
-        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
+        delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
+        delta_u = einsum('i, j -> ij', self.kr, delta_r)
+        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r, delta_u), self.oneOkr)
         convolved_cos = einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass
@@ -180,7 +189,9 @@ class field_data(object):
 
         kr_cross_r = einsum('i,j->ij', self.kr, r)
         kz_cross_z = einsum('k,j->kj', self.kz, z)
-        convolved_j0 = -self.convolved_j1(kr_cross_r)
+        delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
+        delta_u = einsum('i, j -> ij', self.kr, delta_r)
+        convolved_j0 = -self.convolved_j1(kr_cross_r, delta_u)
         convolved_cos= einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass
@@ -201,7 +212,9 @@ class field_data(object):
         # Unlike the above functions, this sums over the particles not the modes
         kr_cross_r = einsum('i,j->ij', self.kr, r)
         kz_cross_z = einsum('k,j->kj', self.kz, z)
-        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r), self.oneOkr)
+        delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
+        delta_u = einsum('i, j -> ij', self.kr, delta_r)
+        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r, delta_u), self.oneOkr)
         convolved_cos= einsum('kj, k->kj', -sin(kz_cross_z), self.shape_function_z/self.kz)
 
         dFzdQ = einsum('ij, kj, ik, j -> ik', convolved_j0, convolved_cos, self.mode_mass, qOc)
