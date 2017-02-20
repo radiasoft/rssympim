@@ -59,15 +59,8 @@ class field_data(object):
         ptcl_width_z = 1./max(self.kz)
         self.ptcl_width_r = 1./max(self.kr)
 
-        self.shape_function_z = 2.*(1.-cos(self.kz*ptcl_width_z))/\
+        self.shape_function_z = (sin(self.kz*ptcl_width_z)**2)/\
                                 (self.kz*self.kz*ptcl_width_z*ptcl_width_z)
-
-        # The shape function for r cannot be analytically evaluated nicely
-
-        #some numerical constants to save computation time & space
-        self.root2 = np.sqrt(2.)
-        self.root2opi = np.sqrt(2./np.pi)
-        self.quarterpi = 0.25*np.pi
 
 
     def convolved_j0(self, _x, delta_x):
@@ -78,9 +71,9 @@ class field_data(object):
         :return:
         """
 
-        return (j0(_x-.5*delta_x) +
+        return (j0(_x-0.5*delta_x) +
                 4.*j0(_x) +
-                j0(_x+.5*delta_x))/6.
+                j0(_x+0.5*delta_x))/6.
 
 
     def convolved_j1(self, _x, delta_x):
@@ -91,16 +84,16 @@ class field_data(object):
         :return:
         """
 
-        return (np.abs(j1(_x-.5*delta_x)) +
+        return (j1(_x-0.5*delta_x) +
                 4.*j1(_x) +
-                j1(_x+.5*delta_x))/6.
+                j1(_x+0.5*delta_x))/6.
 
 
     def int_convolved_j1(self, _x, delta_x):
 
-        return -1.*(j0(_x-.5*delta_x) +
+        return -1.*(j0(_x-0.5*delta_x) +
                 4.*j0(_x) +
-                j0(_x+.5*delta_x))/6.
+                j0(_x+0.5*delta_x))/6.
 
 
     def compute_Ar(self, r, z, qOc):
@@ -111,32 +104,32 @@ class field_data(object):
         :return: Ar, a numpy array
         """
 
-        kr_cross_r = einsum('i,j->ij', self.kr, r)
-        kz_cross_z = einsum('k,j->kj', self.kz, z)
+        kr_cross_r = einsum('i, j -> ij', self.kr, r)
+        kz_cross_z = einsum('k, j -> kj', self.kz, z)
         delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
         delta_u = einsum('i, j -> ij', self.kr, delta_r)
-        convolved_j1 = einsum('ij, i->ij', self.convolved_j1(kr_cross_r, delta_u), self.oneOkr)
-        convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
+        convolved_j1 = self.convolved_j1(kr_cross_r, delta_u)
+        convolved_sin = einsum('kj, k -> kj', sin(kz_cross_z), self.shape_function_z)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
 
-        Ar = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)*qOc
+        Ar = einsum('ik, ij, kj -> j', modeQ, convolved_j1, convolved_sin)*qOc
 
         return Ar
 
 
     def compute_dFrdz(self, r, z, qOc):
 
-        kr_cross_r = einsum('i,j->ij', self.kr, r)
-        kz_cross_z = einsum('k,j->kj', self.kz, z)
+        kr_cross_r = einsum('i, j -> ij', self.kr, r)
+        kz_cross_z = einsum('k, j -> kj', self.kz, z)
         delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
         delta_u = einsum('i, j -> ij', self.kr, delta_r)
-        convolved_j1 = einsum('ij, i->ij', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
-        convolved_sin = einsum('kj, k->kj', cos(kz_cross_z), self.kz*self.shape_function_z)
+        int_convolved_j1 = einsum('ij, i -> ij', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
+        d_convolved_sin_dz = einsum('kj, k -> kj', cos(kz_cross_z), self.kz*self.shape_function_z)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
 
-        dFrdz = einsum('ik, ij, kj->j', modeQ, convolved_j1, convolved_sin)*qOc
+        dFrdz = einsum('ik, ij, kj -> j', modeQ, int_convolved_j1, d_convolved_sin_dz)*qOc
 
         return dFrdz
 
@@ -150,12 +143,12 @@ class field_data(object):
         """
 
         # Unlike the above functions, this sums over the particles not the modes
-        kr_cross_r = einsum('i,j->ij', self.kr, r)
-        kz_cross_z = einsum('k,j->kj', self.kz, z)
+        kr_cross_r = einsum('i, j -> ij', self.kr, r)
+        kz_cross_z = einsum('k, j -> kj', self.kz, z)
         delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
         delta_u = einsum('i, j -> ij', self.kr, delta_r)
-        convolved_j1 = einsum('ij, i->ij', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
-        convolved_sin = einsum('kj, k->kj', sin(kz_cross_z), self.shape_function_z)
+        convolved_j1 = einsum('ij, i -> ij', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
+        convolved_sin = einsum('kj, k -> kj', sin(kz_cross_z), self.shape_function_z)
 
         dFrdQ = einsum('ij, kj, ik, j -> ik', convolved_j1, convolved_sin,
                        self.mode_mass*self.radial_coeff, qOc)
@@ -171,32 +164,32 @@ class field_data(object):
         :return: Az, a numpy array
         """
 
-        kr_cross_r = einsum('i,j->ij', self.kr, r)
-        kz_cross_z = einsum('k,j->kj', self.kz, z)
+        kr_cross_r = einsum('i, j -> ij', self.kr, r)
+        kz_cross_z = einsum('k, j -> kj', self.kz, z)
         delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
         delta_u = einsum('i, j -> ij', self.kr, delta_r)
-        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r, delta_u), self.oneOkr)
-        convolved_cos = einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
+        convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
+        convolved_cos = einsum('kj, k -> kj', cos(kz_cross_z), self.shape_function_z)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass
 
-        Az = einsum('ik, ij, kj->j', modeQ, convolved_j0, convolved_cos)*qOc
+        Az = einsum('ik, ij, kj -> j', modeQ, convolved_j0, convolved_cos)*qOc
 
         return Az
 
 
     def compute_dFzdr(self, r, z, qOc):
 
-        kr_cross_r = einsum('i,j->ij', self.kr, r)
-        kz_cross_z = einsum('k,j->kj', self.kz, z)
+        kr_cross_r = einsum('i, j -> ij', self.kr, r)
+        kz_cross_z = einsum('k, j -> kj', self.kz, z)
         delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
         delta_u = einsum('i, j -> ij', self.kr, delta_r)
-        convolved_j0 = -self.convolved_j1(kr_cross_r, delta_u)
-        convolved_cos= einsum('kj, k->kj', -sin(kz_cross_z), self.shape_function_z/self.kz)
+        d_convolved_j0_dr = einsum('ij, i -> ij',-self.convolved_j1(kr_cross_r, delta_u), self.kr)
+        int_convolved_cos_dz = einsum('kj, k -> kj', sin(kz_cross_z), self.shape_function_z/self.kz)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass
 
-        dFzdr = einsum('ik, ij, kj->j', modeQ, convolved_j0, convolved_cos)*qOc
+        dFzdr = einsum('ik, ij, kj -> j', modeQ, d_convolved_j0_dr, int_convolved_cos_dz)*qOc
 
         return dFzdr
 
@@ -210,14 +203,14 @@ class field_data(object):
         """
 
         # Unlike the above functions, this sums over the particles not the modes
-        kr_cross_r = einsum('i,j->ij', self.kr, r)
-        kz_cross_z = einsum('k,j->kj', self.kz, z)
+        kr_cross_r = einsum('i, j -> ij', self.kr, r)
+        kz_cross_z = einsum('k, j -> kj', self.kz, z)
         delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
         delta_u = einsum('i, j -> ij', self.kr, delta_r)
-        convolved_j0 = einsum('ij, i->ij', self.convolved_j0(kr_cross_r, delta_u), self.oneOkr)
-        convolved_cos= einsum('kj, k->kj', -sin(kz_cross_z), self.shape_function_z/self.kz)
+        convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
+        int_convolved_cos_dz = einsum('kj, k -> kj', sin(kz_cross_z), self.shape_function_z/self.kz)
 
-        dFzdQ = einsum('ij, kj, ik, j -> ik', convolved_j0, convolved_cos, self.mode_mass, qOc)
+        dFzdQ = einsum('ij, kj, ik, j -> ik', convolved_j0, int_convolved_cos_dz, self.mode_mass, qOc)
 
         return dFzdQ
 

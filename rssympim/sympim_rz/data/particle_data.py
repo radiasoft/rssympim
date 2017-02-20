@@ -65,7 +65,7 @@ class particle_data:
         """
 
         self.compute_gamma_mc(field_data)
-        return self.gamma_mc*consts.c
+        return self.gamma_mc
 
 
     def r_boundaries(self):
