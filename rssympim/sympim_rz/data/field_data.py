@@ -91,7 +91,7 @@ class field_data(object):
         :return:
         """
 
-        return (j1(_x-.5*delta_x) +
+        return (np.abs(j1(_x-.5*delta_x)) +
                 4.*j1(_x) +
                 j1(_x+.5*delta_x))/6.
 
@@ -192,7 +192,7 @@ class field_data(object):
         delta_r = np.ones(np.shape(r)[0])*self.ptcl_width_r
         delta_u = einsum('i, j -> ij', self.kr, delta_r)
         convolved_j0 = -self.convolved_j1(kr_cross_r, delta_u)
-        convolved_cos= einsum('kj, k->kj', cos(kz_cross_z), self.shape_function_z)
+        convolved_cos= einsum('kj, k->kj', -sin(kz_cross_z), self.shape_function_z/self.kz)
 
         modeQ = self.mode_coords[:,:,1]*self.mode_mass
 
