@@ -65,10 +65,10 @@ E = []
 t = []
 
 E0 = tot_energy
-n_steps = 15
+n_steps = 10
 step = 1
 
-dt0 = 10./np.amax(fld_data.omega)
+dt0 = 100./np.amax(fld_data.omega)
 
 while step < n_steps:
 
@@ -76,12 +76,10 @@ while step < n_steps:
     create_init_conds(ptcl_data, fld_data)
 
     # Span dt over decades
-    dt = dt0/(3**step)
+    dt = dt0/(2**step)
 
     # Create the new integrator
     my_integrator = integrator.integrator(dt, fld_data.omega)
-
-    ptcl_data.compute_gamma(fld_data)
 
     # Integrate a single step
     my_integrator.single_step(ptcl_data, fld_data)
