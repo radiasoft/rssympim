@@ -39,8 +39,8 @@ class particle_data:
         :param field_data:
         :return:
         """
-        self.gamma = np.sqrt((self.pr - field_data.compute_Ar(self.r,self.z, self.qOc))**2 +\
-                             (self.pz -  field_data.compute_Az(self.r, self.z, self.qOc))**2 +\
+        self.gamma = np.sqrt((self.pr - field_data.compute_Ar(self.r, self.z, self.qOc))**2 +\
+                             (self.pz - field_data.compute_Az(self.r, self.z, self.qOc))**2 +\
                              self.ell**2/(self.r**2) +
                              (self.mc)**2
                              )/(self.mc)
