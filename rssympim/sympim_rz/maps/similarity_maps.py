@@ -13,9 +13,9 @@ class similarity_maps():
         :param ptcl_data:
         :return: nothing
         """
-        ptcl_data.pr += field_data.compute_Ar(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
-        ptcl_data.pz += field_data.compute_dFrdz(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
-        field_data.delta_P += field_data.compute_dFrdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        ptcl_data.pr -= field_data.compute_Ar(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        ptcl_data.pz -= field_data.compute_dFrdz(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        field_data.delta_P -= field_data.compute_dFrdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
 
 
     def A_r_inverse(self, field_data, ptcl_data):
@@ -26,9 +26,9 @@ class similarity_maps():
         :param ptcl_data:
         :return: nothing
         """
-        ptcl_data.pr -= field_data.compute_Ar(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
-        ptcl_data.pz -= field_data.compute_dFrdz(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
-        field_data.delta_P -= field_data.compute_dFrdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        ptcl_data.pr += field_data.compute_Ar(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        ptcl_data.pz += field_data.compute_dFrdz(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        field_data.delta_P += field_data.compute_dFrdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
 
 
     def A_z(self, field_data, ptcl_data):
@@ -38,9 +38,9 @@ class similarity_maps():
         :param ptcl_data:
         :return: nothing
         """
-        ptcl_data.pr += field_data.compute_dFzdr(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
-        ptcl_data.pz += field_data.compute_Az(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
-        field_data.delta_P += field_data.compute_dFzdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        ptcl_data.pr -= field_data.compute_dFzdr(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        ptcl_data.pz -= field_data.compute_Az(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        field_data.delta_P -= field_data.compute_dFzdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
 
 
     def A_z_inverse(self, field_data, ptcl_data):
@@ -51,6 +51,6 @@ class similarity_maps():
         :param ptcl_data:
         :return: nothing
         """
-        ptcl_data.pr -= field_data.compute_dFzdr(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
-        ptcl_data.pz -= field_data.compute_Az(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
-        field_data.delta_P -= field_data.compute_dFzdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        ptcl_data.pr += field_data.compute_dFzdr(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        ptcl_data.pz += field_data.compute_Az(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        field_data.delta_P += field_data.compute_dFzdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
