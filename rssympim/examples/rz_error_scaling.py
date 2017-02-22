@@ -29,10 +29,10 @@ volume = np.pi*l_r*l_r*l_z
 n_electrons = n0*volume
 
 # Simulation parameters
-n_macro_ptcls = 104
+n_macro_ptcls = 9000
 macro_weight = n_electrons/n_macro_ptcls
-n_r_modes = 5
-n_z_modes = 12
+n_r_modes = 30
+n_z_modes = 30
 
 # Create simulation objects
 ptcl_data = particle_data.particle_data(n_macro_ptcls, charge, mass, macro_weight)
@@ -58,7 +58,7 @@ particle_energies = ptcl_data.compute_ptcl_energy(fld_data)
 field_energies = fld_data.compute_energy()
 tot_energy = np.sum(particle_energies) + np.sum(field_energies)
 
-#print 'initial field energies =',np.sum(field_energies)
+print 'initial field energies =',np.sum(field_energies)
 print 'initial particle energies =', np.sum(particle_energies)
 
 E = []
@@ -66,9 +66,9 @@ t = []
 
 E0 = tot_energy
 n_steps = 10
-step = 1
+step = 0
 
-dt0 = 100./np.amax(fld_data.omega)
+dt0 = 1./np.amax(fld_data.omega)
 
 while step < n_steps:
 
@@ -102,7 +102,8 @@ E = np.array(E)
 print E
 
 plt.loglog(t, E)
-#plt.loglog(t, 1/(t*t*t))
+#E_scale = E[0]/(t[0]**3)
+plt.loglog(t, 10**5/(t*t*t))
 plt.xlabel(r'$1/d\tau~ [cm^{-1}]$')
 plt.ylabel(r'$|\Delta E/E_0|$')
 #plt.tight_layout()
