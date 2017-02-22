@@ -16,82 +16,82 @@ mass = constants.electron_mass
 speed_of_light = constants.c
 
 # plasma properties
-n0 = 1.e18 #cm^-3
+n0 = 1.e18 # cm^-3
 omega_p = np.sqrt(4.*np.pi*n0*charge*charge/mass)
 k_p = omega_p/speed_of_light
 
 # compute the simulation domain volume
-l_r = 4./k_p # cm
-l_z = 2./k_p # cm
+l_r = 4./(k_p/(2.*np.pi)) # cm
+l_z = 2./(k_p/(2.*np.pi)) # cm
 volume = np.pi*l_r*l_r*l_z
 
 # Domain parameters
 n_electrons = n0*volume
 
 # Simulation parameters
-n_macro_ptcls = 1000
+n_macro_ptcls = 104
 macro_weight = n_electrons/n_macro_ptcls
 n_r_modes = 5
-n_z_modes = 5
+n_z_modes = 12
 
 # Create simulation objects
 ptcl_data = particle_data.particle_data(n_macro_ptcls, charge, mass, macro_weight)
 fld_data = field_data.field_data(l_r, l_z, n_r_modes, n_z_modes)
-fld_data.mode_coords = np.ones((n_r_modes, n_z_modes, 2))
 
-ptcl_data.r = np.ones(n_macro_ptcls)
-ptcl_data.z = np.zeros(n_macro_ptcls)
-for idx in range(0, n_macro_ptcls):
-    ptcl_data.r[idx] *= idx * l_r / n_macro_ptcls + .01
-    ptcl_data.z[idx] *= idx * l_z/n_macro_ptcls
-ptcl_data.pr = -ptcl_data.mc * np.arange(0., .5, .5 / n_macro_ptcls)
-ptcl_data.ell = ptcl_data.r * ptcl_data.pr
-ptcl_data.pz = ptcl_data.mc * np.arange(0., 10., 10. / n_macro_ptcls)
+def create_init_conds(_ptcl_data, _field_data):
+
+    _field_data.mode_coords = np.ones((n_r_modes, n_z_modes, 2))
+
+    _ptcl_data.r = np.arange(0.1*l_r, l_r, 0.9*l_r/n_macro_ptcls)
+    _ptcl_data.z = np.arange(0., l_z, l_z/n_macro_ptcls)
+    for idx in range(0, n_macro_ptcls):
+        _ptcl_data.r[idx] *= idx * l_r / n_macro_ptcls + .01*l_r
+        _ptcl_data.z[idx] *= idx * l_z/n_macro_ptcls
+    _ptcl_data.pr = -ptcl_data.mc * np.arange(0., .5, .5 / n_macro_ptcls)
+    _ptcl_data.ell = ptcl_data.r * ptcl_data.pr
+    _ptcl_data.pz = ptcl_data.mc * np.arange(0., 1000., 1000. / n_macro_ptcls)
+
+
+create_init_conds(ptcl_data, fld_data)
 
 particle_energies = ptcl_data.compute_ptcl_energy(fld_data)
 field_energies = fld_data.compute_energy()
-tot_energy = np.sum(field_energies) + np.sum(particle_energies)
+tot_energy = np.sum(particle_energies) + np.sum(field_energies)
+
+#print 'initial field energies =',np.sum(field_energies)
+print 'initial particle energies =', np.sum(particle_energies)
 
 E = []
 t = []
 
 E0 = tot_energy
-n_steps = 5
+n_steps = 15
 step = 1
 
-dt0 = 1./np.amax(fld_data.omega)
+dt0 = 10./np.amax(fld_data.omega)
 
 while step < n_steps:
 
     # Generate the initial conditions
-    ptcl_data = particle_data.particle_data(n_macro_ptcls, charge, mass, macro_weight)
-    fld_data = field_data.field_data(l_r, l_z, n_r_modes, n_z_modes)
-    fld_data.mode_coords = np.ones((n_r_modes, n_z_modes, 2))
-
-    ptcl_data.r = np.ones(n_macro_ptcls)
-    for idx in range(0, n_macro_ptcls):
-        ptcl_data.r[idx] *= idx * (4.) / n_macro_ptcls + .01
-    ptcl_data.pr = -ptcl_data.mc * np.arange(0., .5, .5 / n_macro_ptcls)
-    ptcl_data.ell = ptcl_data.r * ptcl_data.pr
-    ptcl_data.z = np.zeros(n_macro_ptcls)
-    ptcl_data.pz = ptcl_data.mc * np.arange(0., 10., 10. / n_macro_ptcls)
+    create_init_conds(ptcl_data, fld_data)
 
     # Span dt over decades
-    dt = dt0/(10**step)
+    dt = dt0/(3**step)
 
     # Create the new integrator
     my_integrator = integrator.integrator(dt, fld_data.omega)
 
     ptcl_data.compute_gamma(fld_data)
 
-    # Integrate one hundred steps
-    for idx in range(0,100):
-
-        my_integrator.single_step(ptcl_data, fld_data)
+    # Integrate a single step
+    my_integrator.single_step(ptcl_data, fld_data)
 
     particle_energies = ptcl_data.compute_ptcl_energy(fld_data)
     field_energies = fld_data.compute_energy()
-    tot_energy = np.sum(field_energies) + np.sum(particle_energies)
+    tot_energy = np.sum(particle_energies) + np.sum(field_energies)
+
+    print ' field energies =', np.sum(field_energies)
+    print ' particle energies =', np.sum(particle_energies)
 
     step += 1
 
@@ -101,10 +101,12 @@ while step < n_steps:
 t = np.array(t)
 E = np.array(E)
 
+print E
+
 plt.loglog(t, E)
 #plt.loglog(t, 1/(t*t*t))
-plt.xlabel(r'$1/d\tau [cm^{-1}]$')
-plt.ylabel(r'$|\Delta E|$')
-plt.tight_layout()
+plt.xlabel(r'$1/d\tau~ [cm^{-1}]$')
+plt.ylabel(r'$|\Delta E/E_0|$')
+#plt.tight_layout()
 plt.show()
 
