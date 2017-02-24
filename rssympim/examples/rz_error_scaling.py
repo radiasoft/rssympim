@@ -42,8 +42,8 @@ def create_init_conds(_ptcl_data, _field_data):
 
     _field_data.mode_coords = np.ones((n_r_modes, n_z_modes, 2))
 
-    _ptcl_data.r = np.arange(0.1*l_r, l_r, 0.9*l_r/n_macro_ptcls)
-    _ptcl_data.z = np.arange(0., l_z, l_z/n_macro_ptcls)
+    _ptcl_data.r = np.arange(0.1*l_r, 0.9*l_r, 0.8*l_r/n_macro_ptcls)
+    _ptcl_data.z = np.arange(0.1*l_z, 0.9*l_z, 0.8*l_z/n_macro_ptcls)
     for idx in range(0, n_macro_ptcls):
         _ptcl_data.r[idx] *= idx * l_r / n_macro_ptcls + .01*l_r
         _ptcl_data.z[idx] *= idx * l_z/n_macro_ptcls
@@ -65,10 +65,10 @@ E = []
 t = []
 
 E0 = tot_energy
-n_steps = 10
+n_steps = 18
 step = 0
 
-dt0 = 1./np.amax(fld_data.omega)
+dt0 = 32./np.amax(fld_data.omega)
 
 while step < n_steps:
 
@@ -102,10 +102,9 @@ E = np.array(E)
 print E
 
 plt.loglog(t, E)
-#E_scale = E[0]/(t[0]**3)
 plt.loglog(t, 10**5/(t*t*t))
 plt.xlabel(r'$1/d\tau~ [cm^{-1}]$')
 plt.ylabel(r'$|\Delta E/E_0|$')
-#plt.tight_layout()
+plt.tight_layout()
 plt.show()
 
