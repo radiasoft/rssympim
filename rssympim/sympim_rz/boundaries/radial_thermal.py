@@ -8,7 +8,6 @@ Author: Stephen Webb
 """
 
 import numpy as np
-from rssympim.constants import constants as consts
 
 class radial_thermal:
 
