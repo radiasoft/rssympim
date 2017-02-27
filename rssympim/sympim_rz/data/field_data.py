@@ -28,6 +28,9 @@ class field_data(object):
         self.n_modes_r = n_modes_r
         self.n_modes_z = n_modes_z
 
+        self.domain_L = L
+        self.domain_R = R
+
         self.kr = jn_zeros(0, self.n_modes_r)/R
         self.oneOkr = 1./self.kr
         self.kz = np.pi*np.arange(1,self.n_modes_z+1)/L
