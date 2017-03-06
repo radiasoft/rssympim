@@ -5,7 +5,7 @@ from rssympim.constants import constants as consts
 
 class particle_data:
 
-    def __init__(self, n_particles, charge, mass, weight):
+    def __init__(self, n_particles, charge, mass, weight, species_name=False):
         """
         Stores the particle data and can compute the particle ensemble
         quantities
@@ -25,10 +25,14 @@ class particle_data:
 
         self.weight = weight
 
+        self.charge = charge
+        self.mass   = mass
+
+        self.species_name = species_name
+
         self.q = self.weight*charge*np.ones(n_particles)
         self.m = np.abs(self.weight*mass)
 
-        self.qOm = self.q/self.m
         self.qOc = self.q/consts.c
         self.mc = self.m*consts.c
 
