@@ -17,13 +17,17 @@ class field_analysis:
     def __init__(self):
         self.file_name = False
 
+
     def open_file(self, file_name):
 
         self.file = h5py.File(file_name, 'r')
         self.file_name = file_name
 
+
     def file_name(self):
+
         return self.file_name
+
 
     def close_file(self):
 
@@ -31,7 +35,53 @@ class field_analysis:
         self.file_name = False
 
 
+    def plot_energy_spectrum(self, fig_name):
+        """
+        Contour plot of the energy in the fields versus k_r and k_z
+
+        :param fig_name:
+        :return:
+        """
+
+        P = self.file.get('mode_p')
+        Q = self.file.get('mode_q')
+
+        kr = self.file.get('kr')
+        kz = self.file.get('kz')
+
+        n_modes_r = np.shape(kr)[0]
+        n_modes_z = np.shape(kz)[0]
+
+        omega = np.zeros((n_modes_r, n_modes_z))
+        for idx_r in range(0, n_modes_r):
+            for idx_z in range(0, n_modes_z):
+                omega[idx_r, idx_z] = \
+                    np.sqrt(kr[idx_r] ** 2 + kz[idx_z] ** 2)
+
+        Psqrd = P*P
+        Qsqrd = Q*Q
+
+        Energy = 0.5*(Psqrd + (omega*Qsqrd)**2)
+
+        Energy_plot = plt.imshow(Energy, cmap=plt.cm.viridis, extent=[0, kr[-1], 0, kz[-1]])
+
+        plt.xlabel(r'$k_z$ [cm${}^{-1}$]')
+        plt.ylabel(r'$k_r$ [cm${}^{-1}$]')
+        cbar = plt.colorbar(Energy_plot)
+        cbar.ax.set_ylabel(r'$E$ [ergs]')
+
+        plt.tight_layout()
+
+        plt.savefig(fig_name)
+
+
     def plot_Ez(self, fig_name):
+        """
+        Plot the longitudinal electric field in units of statV/cm.
+
+        :param fig_name:
+        :return:
+        """
 
         EZ = self.compute_Ez()
 
@@ -53,6 +103,14 @@ class field_analysis:
     def plot_acceleration(self, fig_name,
                           charge2mass=consts.electron_charge/consts.electron_mass):
 
+        """
+        Plot the longitudinal acceleration in units of a species rest energy/cm
+
+        :param fig_name:
+        :param charge2mass: defaults to electron
+        :return:
+        """
+
         EZ = self.compute_Ez()
 
         R = self.file.attrs['R']
@@ -73,6 +131,10 @@ class field_analysis:
 
 
     def compute_Ez(self):
+        """
+        Compute the longitudinal electric field in units of statV/cm.
+        :return: EZ, a meshgrid array of the electric field
+        """
 
         if self.file_name:
 
