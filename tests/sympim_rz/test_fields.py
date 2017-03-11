@@ -1,8 +1,5 @@
-#import pytest
 import numpy as np
-from rssympim.constants import constants as consts
 from rssympim.sympim_rz.data import particle_data, field_data
-from rssympim.sympim_rz.integrators import integrator
 
 # dictionary for fixed values
 _PD = {
