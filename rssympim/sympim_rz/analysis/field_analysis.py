@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from rssympim.constants import constants as consts
 import numpy as np
 from numpy import einsum, cos, sin
-from scipy.special import j0, j1
+from scipy.special import j0, j1, jn_zeros
 
 
 class field_analysis:
@@ -83,12 +83,14 @@ class field_analysis:
         :return:
         """
 
+        plt.clf()
+
         EZ = self.compute_Ez()
 
         R = self.file.attrs['R']
         L = self.file.attrs['L']
 
-        Ez_plot = plt.imshow(EZ, cmap=plt.cm.RdBu, extent=[0, L, 0, R], origin='lower', aspect=L/R)
+        Ez_plot = plt.imshow(EZ.transpose(), cmap=plt.cm.RdBu, extent=[0, R, 0, L], origin='lower', aspect=L/R)
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
@@ -107,12 +109,14 @@ class field_analysis:
         :return:
         """
 
+        plt.clf()
+
         ER = self.compute_Er()
 
         R = self.file.attrs['R']
         L = self.file.attrs['L']
 
-        Er_plot = plt.imshow(ER, cmap=plt.cm.RdBu, extent=[0, L, 0, R], origin='lower', aspect=L/R)
+        Er_plot = plt.imshow(ER.transpose(), cmap=plt.cm.RdBu, extent=[0, R, 0, L], origin='lower', aspect=L/R)
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
@@ -187,7 +191,18 @@ class field_analysis:
             the_j0 = j0(kr_cross_r)
             the_cos = cos(kz_cross_z)
 
-            EZ = einsum('ik, ilm, klm->lm', mode_P, the_j0, the_cos)
+            mode_mass = np.ones((n_modes_r, n_modes_z))
+            zero_zeros = jn_zeros(0, n_modes_r)
+
+            for idx_r in range(0, n_modes_r):
+                for idx_z in range(0, n_modes_z):
+                    mode_mass[idx_r, idx_z] = np.sqrt(consts.c /
+                        (.25 * R * R * L * (j1(zero_zeros[idx_r]) ** 2) *
+                         (1 + (kz[idx_z] / kr[idx_r]) ** 2)))
+
+            mode_mass = np.sqrt(mode_mass)
+
+            EZ = einsum('ik, ilm, klm, ik->lm', mode_P, the_j0, the_cos, mode_mass)
 
             return EZ
 
@@ -229,11 +244,22 @@ class field_analysis:
             the_sin = sin(kz_cross_z)
             radial_coeff = np.ones((n_modes_r, n_modes_z))
 
+            mode_mass = np.ones((n_modes_r, n_modes_z))
+            zero_zeros = jn_zeros(0, n_modes_r)
+
+            for idx_r in range(0, n_modes_r):
+                for idx_z in range(0, n_modes_z):
+                    mode_mass[idx_r, idx_z] = np.sqrt(consts.c /
+                        (.25 * R * R * L * (j1(zero_zeros[idx_r]) ** 2) *
+                         (1 + (kz[idx_z] / kr[idx_r]) ** 2)))
+
+            mode_mass = np.sqrt(mode_mass)
+
             for idx_r in range(0, n_modes_r):
                 for idx_z in range(0, n_modes_z):
                     radial_coeff[idx_r, idx_z] = kz[idx_z] / kr[idx_r]
 
-            ER = einsum('ik, ilm, klm, ik->lm', mode_P, the_j1, the_sin, radial_coeff)
+            ER = einsum('ik, ilm, klm, ik, ik->lm', mode_P, the_j1, the_sin, radial_coeff, mode_mass)
 
             return ER
 
