@@ -62,7 +62,7 @@ class field_data(object):
         ptcl_width_z = 1./max(self.kz)
         self.ptcl_width_r = 1./max(self.kr)
 
-        self.shape_function_z = (sin(self.kz*ptcl_width_z)**2)/\
+        self.shape_function_z = 2*(1. - cos(self.kz*ptcl_width_z))/\
                                 (self.kz*self.kz*ptcl_width_z*ptcl_width_z)
 
 
