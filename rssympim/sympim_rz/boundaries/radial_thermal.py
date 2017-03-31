@@ -37,11 +37,12 @@ class radial_thermal:
         out_of_bounds = np.where(ptcl_data.r > fld_data.domain_R)
 
         n_new_ptcls = np.shape(out_of_bounds[0])[0]
+
         # pretend all the particles are on the x-axis for simplicity
-        sigma = np.sqrt(2.*ptcl_data.m[out_of_bounds]*self.temp)
-        px  = -np.abs(np.random.normal(0.,sigma)) # Must be moving radially inward
-        py  = np.random.normal(0.,sigma)
-        pz  = np.random.normal(0.,sigma)
+        sigma = np.sqrt(self.temp)
+        px  = -np.abs(np.random.normal(0.,sigma, n_new_ptcls)) # Must be moving radially inward
+        py  = np.random.normal(0.,sigma, n_new_ptcls)
+        pz  = np.random.normal(0.,sigma, n_new_ptcls)
         rad = np.array([fld_data.domain_R]*n_new_ptcls)
 
         Ar = fld_data.compute_Ar(ptcl_data.r[out_of_bounds],

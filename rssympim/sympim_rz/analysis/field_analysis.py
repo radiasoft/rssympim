@@ -8,8 +8,8 @@ import h5py
 from matplotlib import pyplot as plt
 from rssympim.constants import constants as consts
 import numpy as np
-from numpy import einsum, cos
-from scipy.special import j0
+from numpy import einsum, cos, sin
+from scipy.special import j0, j1
 
 
 class field_analysis:
@@ -88,12 +88,36 @@ class field_analysis:
         R = self.file.attrs['R']
         L = self.file.attrs['L']
 
-        Ez_plot = plt.imshow(EZ, cmap=plt.cm.RdBu, extent=[0, L, 0, R])
+        Ez_plot = plt.imshow(EZ, cmap=plt.cm.RdBu, extent=[0, L, 0, R], origin='lower', aspect=L/R)
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
         cbar = plt.colorbar(Ez_plot)
         cbar.ax.set_ylabel(r'$E_z$ [statV/cm]')
+
+        plt.tight_layout()
+
+        plt.savefig(fig_name)
+
+    def plot_Er(self, fig_name):
+        """
+        Plot the longitudinal electric field in units of statV/cm.
+
+        :param fig_name:
+        :return:
+        """
+
+        ER = self.compute_Er()
+
+        R = self.file.attrs['R']
+        L = self.file.attrs['L']
+
+        Er_plot = plt.imshow(ER, cmap=plt.cm.RdBu, extent=[0, L, 0, R], origin='lower', aspect=L/R)
+
+        plt.xlabel(r'$z$ [cm]')
+        plt.ylabel(r'$r$ [cm]')
+        cbar = plt.colorbar(Er_plot)
+        cbar.ax.set_ylabel(r'$E_r$ [statV/cm]')
 
         plt.tight_layout()
 
@@ -166,6 +190,52 @@ class field_analysis:
             EZ = einsum('ik, ilm, klm->lm', mode_P, the_j0, the_cos)
 
             return EZ
+
+
+        else:
+            print 'File must be opened first.'
+
+    def compute_Er(self):
+        """
+        Compute the radial electric field in units of statV/cm.
+        :return: ER, a meshgrid array of the electric field
+        """
+
+        if self.file_name:
+
+            # get the domain length and radius
+            R = self.file.attrs['R']
+            L = self.file.attrs['L']
+
+            # get the k-vectors
+            kr = self.file.get('kr')
+            kz = self.file.get('kz')
+
+            n_modes_r = np.shape(kr)[0]
+            n_modes_z = np.shape(kz)[0]
+
+            mode_P = self.file.get('mode_p')
+
+            R_range = np.arange(0., R, R/n_modes_r)
+            Z_range = np.arange(0., L, L/n_modes_z)
+
+            RR, ZZ = np.meshgrid(R_range, Z_range)
+
+            kr_cross_r = einsum('i, lm -> ilm', kr, RR)
+            kz_cross_z = einsum('k, lm -> klm', kz, ZZ)
+
+            # generate a mesh grid
+            the_j1 = j1(kr_cross_r)
+            the_sin = sin(kz_cross_z)
+            radial_coeff = np.ones((n_modes_r, n_modes_z))
+
+            for idx_r in range(0, n_modes_r):
+                for idx_z in range(0, n_modes_z):
+                    radial_coeff[idx_r, idx_z] = kz[idx_z] / kr[idx_r]
+
+            ER = einsum('ik, ilm, klm, ik->lm', mode_P, the_j1, the_sin, radial_coeff)
+
+            return ER
 
 
         else:
