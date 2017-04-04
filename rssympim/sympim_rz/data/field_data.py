@@ -59,8 +59,8 @@ class field_data(object):
         # k-vectors for each direction. Default for now is to have the
         # particle widths be half the shortest wavelength, which should
         # resolve the wave physics reasonably well.
-        ptcl_width_z = 1.*2.*np.pi/max(self.kz)
-        self.ptcl_width_r = 1.*2.*np.pi/max(self.kr)
+        ptcl_width_z = .25*2.*np.pi/max(self.kz)
+        self.ptcl_width_r = .25*2.*np.pi/max(self.kr)
 
         self.shape_function_z = 2*(1. - cos(self.kz*ptcl_width_z))/\
                                 (self.kz*self.kz*ptcl_width_z*ptcl_width_z)
