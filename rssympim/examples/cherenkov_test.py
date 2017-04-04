@@ -27,23 +27,28 @@ omega_p = np.sqrt(4.*np.pi*n0*charge*charge/mass)
 k_p = omega_p/speed_of_light
 
 # compute the simulation domain volume
-l_r = 1./k_p # cm
-l_z = 1./k_p # cm
+plasma_lengths = 3
+plasma_widths  = 1
+modes_per_r = 8
+modes_per_z = 8
+ppm = 4
+
+l_r = plasma_widths*2.*np.pi/k_p # cm
+l_z = plasma_lengths*2.*np.pi/k_p # cm
 volume = np.pi*l_r*l_r*l_z
 
 # Domain parameters
 n_electrons = n0*volume
 
 # Simulation parameters
-n_r_modes = 20
-n_z_modes = 20
-ppm = 10
+n_r_modes = plasma_widths*modes_per_r
+n_z_modes = plasma_lengths*modes_per_z
 
 n_macro_ptcls = ppm*n_r_modes*n_z_modes
 macro_weight = n_electrons/n_macro_ptcls
 
 # run for ten plasma periods
-run_time = .1*2.*np.pi/k_p
+run_time = 2.*np.pi/k_p
 
 
 # Create simulation objects
@@ -56,19 +61,19 @@ dt = 0.1*2.*np.pi/np.amax(fld_data.omega)
 my_integrator = integrator.integrator(dt, fld_data.omega)
 
 # Initial conditions
-temp = .00001*mass*speed_of_light
+temp = .01*mass*speed_of_light*macro_weight
 
 for ptcl_idx in range(0, n_macro_ptcls):
     # Uniform distribution in space
-    ptcl_data.r[ptcl_idx] = np.random.random()*l_r/2
-    ptcl_data.z[ptcl_idx] = np.random.random()*l_z
-    #ptcl_data.pr[ptcl_idx] = np.random.normal(0.,temp)*macro_weight
-    ptcl_data.pz[ptcl_idx] = 200.*mass*speed_of_light*macro_weight #+ np.random.normal(0.,temp)*macro_weight
-    #ptcl_data.ell[ptcl_idx] = ptcl_data.r[ptcl_idx]*ptcl_data.pr[ptcl_idx]
+    ptcl_data.r[ptcl_idx] = np.random.random()*l_r
+    ptcl_data.z[ptcl_idx] = np.random.random()*l_z/3.
+    ptcl_data.pr[ptcl_idx] = np.random.normal(0.,temp)#*macro_weight*mass*speed_of_light
+    ptcl_data.pz[ptcl_idx] = 10.*macro_weight*mass*speed_of_light #+ np.random.normal(0.,temp)
+    ptcl_data.ell[ptcl_idx] = ptcl_data.r[ptcl_idx]*ptcl_data.pr[ptcl_idx]
 
 # Create a thermal boundary
-#radial_boundary = radial_thermal.radial_thermal(temp)
-radial_boundary = radial_reflecting.radial_reflecting()
+radial_boundary = radial_thermal.radial_thermal(temp)
+#radial_boundary = radial_reflecting.radial_reflecting()
 
 # Energy diagnostics
 particle_energies_0 = np.sum(ptcl_data.compute_ptcl_energy(fld_data))
@@ -120,7 +125,7 @@ fld_E.append(field_energies / tot_energy)
 ptcl_E.append(particle_energies / tot_energy)
 E.append(tot_energy / tot_energy_0)
 t.append(k_p * time)
-"""
+
 plt.plot(t, fld_E)
 plt.xlabel(r'$k_p \times \tau$')
 plt.ylabel(r'$E_{fld.}/E_0$')
@@ -141,19 +146,21 @@ plt.ylabel(r'$E_{tot.}/E_0$')
 plt.tight_layout()
 plt.show()
 plt.clf()
-"""
+
 field_dumper = field_io.field_io('test_field', fld_data)
 field_dumper.dump_field(fld_data, step)
 
 analysis = field_analysis.field_analysis()
 
-analysis.open_file('test_field_70.hdf5')
+file_name = 'test_field_'+str(step)+'.hdf5'
+
+analysis.open_file(file_name)
 
 analysis.plot_Er('Er_test.png')
+analysis.plot_Ez('Ez_test.png')
 
 analysis.close_file()
 
 plt.clf()
-
-plt.scatter(ptcl_data.z, ptcl_data.r,s=1)
+plt.scatter(ptcl_data.z, ptcl_data.r, s=1)
 plt.show()
