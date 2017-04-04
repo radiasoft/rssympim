@@ -39,6 +39,8 @@ class radial_reflecting:
 
         # compute how far out the particle got and for how long
         diff_r = ptcl_data.r[out_of_bounds] - fld_data.domain_R
+
+        # This is very incorrect for a relativistic particle.
         diff_t = diff_r*ptcl_data.m[out_of_bounds]/Pr
 
         # Flip the mechanical momentum
