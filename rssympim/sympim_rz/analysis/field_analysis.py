@@ -54,10 +54,10 @@ class field_analysis:
         n_modes_r = np.shape(kr)[0]
         n_modes_z = np.shape(kz)[0]
 
-        omega = np.zeros((n_modes_r, n_modes_z))
+        omega = np.zeros((n_modes_z, n_modes_r))
         for idx_r in range(0, n_modes_r):
             for idx_z in range(0, n_modes_z):
-                omega[idx_r, idx_z] = \
+                omega[idx_z, idx_r] = \
                     np.sqrt(kr[idx_r] ** 2 + kz[idx_z] ** 2)
 
         Psqrd = P*P
@@ -97,9 +97,8 @@ class field_analysis:
 
         Ez_plot = plt.imshow(EZ.transpose(),
                              cmap=plt.cm.RdBu,
-                             extent=[0, R, 0, L],
-                             origin='lower',
-                             aspect=1.)
+                             extent=[0, L, 0, R],
+                             origin='lower')
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
@@ -128,9 +127,8 @@ class field_analysis:
 
         Er_plot = plt.imshow(ER.transpose(),
                              cmap=plt.cm.RdBu,
-                             extent=[0, R, 0, L],
-                             origin='lower',
-                             aspect=1.)
+                             extent=[0, L, 0, R],
+                             origin='lower')
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
@@ -200,23 +198,23 @@ class field_analysis:
 
             RR, ZZ = np.meshgrid(R_range, Z_range)
 
-            kr_cross_r = einsum('i, lm -> ilm', kr, RR)
-            kz_cross_z = einsum('k, lm -> klm', kz, ZZ)
+            kr_cross_r = einsum('k, lm -> klm', kr, RR)
+            kz_cross_z = einsum('i, lm -> ilm', kz, ZZ)
 
             # generate a mesh grid
             the_j0 = j0(kr_cross_r)
             the_cos = cos(kz_cross_z)
 
-            mode_mass = np.ones((n_modes_r, n_modes_z))
+            mode_mass = np.ones((n_modes_z, n_modes_r))
             zero_zeros = jn_zeros(0, n_modes_r)
 
             for idx_r in range(0, n_modes_r):
                 for idx_z in range(0, n_modes_z):
-                    mode_mass[idx_r, idx_z] = np.sqrt(consts.c /
+                    mode_mass[idx_z, idx_r] = np.sqrt(consts.c /
                         (.25 * R * R * L * (j1(zero_zeros[idx_r]) ** 2) *
                          (1 + (kz[idx_z] / kr[idx_r]) ** 2)))
 
-            EZ = einsum('ik, ilm, klm, ik->lm', mode_P, the_j0, the_cos, mode_mass)
+            EZ = einsum('ik, klm, ilm, ik->lm', mode_P, the_j0, the_cos, mode_mass)
 
             return EZ
 
@@ -256,22 +254,22 @@ class field_analysis:
             # generate a mesh grid
             the_j1 = j1(kr_cross_r)
             the_sin = sin(kz_cross_z)
-            radial_coeff = np.ones((n_modes_r, n_modes_z))
+            radial_coeff = np.ones((n_modes_z, n_modes_r))
 
-            mode_mass = np.ones((n_modes_r, n_modes_z))
+            mode_mass = np.ones((n_modes_z, n_modes_r))
             zero_zeros = jn_zeros(0, n_modes_r)
 
             for idx_r in range(0, n_modes_r):
                 for idx_z in range(0, n_modes_z):
-                    mode_mass[idx_r, idx_z] = np.sqrt(consts.c /
+                    mode_mass[idx_z, idx_r] = np.sqrt(consts.c /
                         (.25 * R * R * L * (j1(zero_zeros[idx_r]) ** 2) *
                          (1 + (kz[idx_z] / kr[idx_r]) ** 2)))
 
             for idx_r in range(0, n_modes_r):
                 for idx_z in range(0, n_modes_z):
-                    radial_coeff[idx_r, idx_z] = kz[idx_z]/kr[idx_r]
+                    radial_coeff[idx_z, idx_r] = kz[idx_z]/kr[idx_r]
 
-            ER = einsum('ik, ilm, klm, ik, ik->lm', mode_P, the_j1, the_sin, radial_coeff, mode_mass)
+            ER = einsum('ik, klm, ilm, ik, ik->lm', mode_P, the_j1, the_sin, radial_coeff, mode_mass)
 
             return ER
 
