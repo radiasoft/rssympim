@@ -43,8 +43,10 @@ class field_analysis:
         :return:
         """
 
-        P = self.file.get('mode_p')
-        Q = self.file.get('mode_q')
+        plt.clf()
+
+        P = np.array(self.file.get('mode_p'))
+        Q = np.array(self.file.get('mode_q'))
 
         kr = self.file.get('kr')
         kz = self.file.get('kz')
@@ -63,7 +65,10 @@ class field_analysis:
 
         Energy = 0.5*(Psqrd + (omega*Qsqrd)**2)
 
-        Energy_plot = plt.imshow(Energy, cmap=plt.cm.viridis, extent=[0, kr[-1], 0, kz[-1]])
+        Energy_plot = plt.imshow(Energy.transpose(),
+                                 cmap=plt.cm.viridis,
+                                 extent=[0, kr[-1], 0, kz[-1]],
+                                 aspect=np.max(kr)/np.max(kz))
 
         plt.xlabel(r'$k_z$ [cm${}^{-1}$]')
         plt.ylabel(r'$k_r$ [cm${}^{-1}$]')
@@ -71,7 +76,7 @@ class field_analysis:
         cbar.ax.set_ylabel(r'$E$ [ergs]')
 
         plt.tight_layout()
-
+        print 'Saving figure', fig_name
         plt.savefig(fig_name)
 
 
@@ -90,7 +95,11 @@ class field_analysis:
         R = self.file.attrs['R']
         L = self.file.attrs['L']
 
-        Ez_plot = plt.imshow(EZ.transpose(), cmap=plt.cm.RdBu, extent=[0, R, 0, L], origin='lower', aspect=L/R)
+        Ez_plot = plt.imshow(EZ.transpose(),
+                             cmap=plt.cm.RdBu,
+                             extent=[0, R, 0, L],
+                             origin='lower',
+                             aspect=1.)
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
@@ -98,8 +107,9 @@ class field_analysis:
         cbar.ax.set_ylabel(r'$E_z$ [statV/cm]')
 
         plt.tight_layout()
-
+        print 'Saving figure', fig_name
         plt.savefig(fig_name)
+
 
     def plot_Er(self, fig_name):
         """
@@ -116,7 +126,11 @@ class field_analysis:
         R = self.file.attrs['R']
         L = self.file.attrs['L']
 
-        Er_plot = plt.imshow(ER.transpose(), cmap=plt.cm.RdBu, extent=[0, R, 0, L], origin='lower', aspect=L/R)
+        Er_plot = plt.imshow(ER.transpose(),
+                             cmap=plt.cm.RdBu,
+                             extent=[0, R, 0, L],
+                             origin='lower',
+                             aspect=1.)
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
@@ -124,7 +138,7 @@ class field_analysis:
         cbar.ax.set_ylabel(r'$E_r$ [statV/cm]')
 
         plt.tight_layout()
-
+        print 'Saving figure', fig_name
         plt.savefig(fig_name)
 
 
@@ -146,7 +160,9 @@ class field_analysis:
 
         Gradient = charge2mass*EZ/consts.c**2
 
-        Grad_plot = plt.imshow(Gradient, cmap=plt.cm.RdBu, extent=[0, L, 0, R])
+        Grad_plot = plt.imshow(Gradient,
+                               cmap=plt.cm.RdBu,
+                               extent=[0, L, 0, R])
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
@@ -154,7 +170,7 @@ class field_analysis:
         cbar.ax.set_ylabel(r'$Gradient$ [$mc^2$/cm]')
 
         plt.tight_layout()
-
+        print 'Saving figure', fig_name
         plt.savefig(fig_name)
 
 
@@ -199,8 +215,6 @@ class field_analysis:
                     mode_mass[idx_r, idx_z] = np.sqrt(consts.c /
                         (.25 * R * R * L * (j1(zero_zeros[idx_r]) ** 2) *
                          (1 + (kz[idx_z] / kr[idx_r]) ** 2)))
-
-            mode_mass = np.sqrt(mode_mass)
 
             EZ = einsum('ik, ilm, klm, ik->lm', mode_P, the_j0, the_cos, mode_mass)
 
@@ -253,11 +267,9 @@ class field_analysis:
                         (.25 * R * R * L * (j1(zero_zeros[idx_r]) ** 2) *
                          (1 + (kz[idx_z] / kr[idx_r]) ** 2)))
 
-            mode_mass = np.sqrt(mode_mass)
-
             for idx_r in range(0, n_modes_r):
                 for idx_z in range(0, n_modes_z):
-                    radial_coeff[idx_r, idx_z] = kz[idx_z] / kr[idx_r]
+                    radial_coeff[idx_r, idx_z] = kz[idx_z]/kr[idx_r]
 
             ER = einsum('ik, ilm, klm, ik, ik->lm', mode_P, the_j1, the_sin, radial_coeff, mode_mass)
 
