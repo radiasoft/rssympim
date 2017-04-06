@@ -11,10 +11,13 @@ class integrator:
         self.field_maps = field_maps.field_maps(frequencies, dt)
 
 
-    def single_step(self, ptcl_data, field_data):
+    def single_step_fields(self, field_data):
 
         # Update the fields then compute gamma to get a symplectic integrator
-        self.field_maps.half_advance_forward(field_data)
+        self.field_maps.advance_forward(field_data)
+
+
+    def single_step_ptcl(self, ptcl_data, field_data):
 
         # always compute the new gamma_mc after the field map update
         ptcl_data.compute_gamma_mc(field_data)
@@ -24,7 +27,7 @@ class integrator:
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 
         self.sim_maps.A_r(field_data, ptcl_data)
-        self.ptcl_maps.half_drift_r(ptcl_data)
+        self.ptcl_maps.half_drift_r(ptcl_data, field_data)
         self.sim_maps.A_r_inverse(field_data, ptcl_data)
 
         self.sim_maps.A_z(field_data, ptcl_data)
@@ -32,16 +35,13 @@ class integrator:
         self.sim_maps.A_z_inverse(field_data, ptcl_data)
 
         self.sim_maps.A_r(field_data, ptcl_data)
-        self.ptcl_maps.half_drift_r(ptcl_data)
+        self.ptcl_maps.half_drift_r(ptcl_data, field_data)
         self.sim_maps.A_r_inverse(field_data, ptcl_data)
 
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 
         # Add the delta-P to each mode
         field_data.finalize_fields()
-
-        # Advance the fields the last half-step
-        self.field_maps.half_advance_forward(field_data)
 
 
     def half_field_forward(self, field_data):
