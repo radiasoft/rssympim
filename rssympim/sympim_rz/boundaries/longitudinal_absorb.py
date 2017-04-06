@@ -28,4 +28,3 @@ class longitudinal_absorb:
         ptcl_data.qOc[out_of_bounds] = 0.
         out_of_bounds = np.where(ptcl_data.z > l_z)
         ptcl_data.qOc[out_of_bounds] = 0.
-
