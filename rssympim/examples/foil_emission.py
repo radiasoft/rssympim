@@ -7,7 +7,7 @@ Author: Stephen Webb
 from rssympim.sympim_rz.data import particle_data, field_data
 from rssympim.sympim_rz.integrators import integrator
 from rssympim.constants import constants
-from rssympim.sympim_rz.boundaries import radial_thermal, radial_reflecting, longitudinal_absorb
+from rssympim.sympim_rz.boundaries import longitudinal_absorb, radial_reflecting
 from rssympim.sympim_rz.analysis import field_analysis
 from rssympim.sympim_rz.io import field_io
 import numpy as np
@@ -19,15 +19,15 @@ mass = constants.electron_mass
 speed_of_light = constants.c
 
 # plasma properties
-n0 = 1.e17 # cm^-3
+n0 = 1.e16 # cm^-3
 omega_p = np.sqrt(4.*np.pi*n0*charge*charge/mass)
 k_p = omega_p/speed_of_light
 
 # compute the simulation domain volume
-plasma_lengths = 5
+plasma_lengths = 2
 plasma_widths  = 2
-modes_per_r = 20
-modes_per_z = 20
+modes_per_r = 10
+modes_per_z = 10
 ppm = 8
 
 l_r = plasma_widths*2.*np.pi/k_p # cm
@@ -57,31 +57,18 @@ run_time = 50*dt #4.*np.pi/k_p
 # Set the diagnostics
 compute_energy = False
 
-
-
 my_integrator = integrator.integrator(dt, fld_data.omega)
 
 # Initial conditions
-for ptcl_idx in range(0, 15*n_macro_ptcls/20):
+for ptcl_idx in range(0, n_macro_ptcls):
     # Uniform distribution in space
     ptcl_data.r[ptcl_idx] = np.random.random()*l_r
-    ptcl_data.z[ptcl_idx] = np.random.random()*l_z
-    #ptcl_data.pr[ptcl_idx] = np.random.normal(0.,temp)*macro_weight
-    #ptcl_data.pz[ptcl_idx] = np.random.normal(0.,temp)*macro_weight
-    #ptcl_data.ell[ptcl_idx] = ptcl_data.r[ptcl_idx]*np.random.normal(0.,temp)*macro_weight
-
-for ptcl_idx in range(15*n_macro_ptcls/20, n_macro_ptcls):
-    # Uniform distribution in space
-    ptcl_data.r[ptcl_idx] = np.random.random()*l_r #np.abs(np.random.normal(0., 1./k_p))
-    ptcl_data.z[ptcl_idx] = np.random.normal(-.1*l_z, (1./k_p))
-    #ptcl_data.pr[ptcl_idx] = np.random.normal(0.,temp)*macro_weight
+    ptcl_data.z[ptcl_idx] = np.random.normal(-0.1*l_z, 1./k_p)
     ptcl_data.pz[ptcl_idx] = 100.*mass*speed_of_light*macro_weight
-    #ptcl_data.ell[ptcl_idx] = ptcl_data.r[ptcl_idx]*ptcl_data.pr[ptcl_idx]
 
 # Create a thermal boundary
 radial_boundary = radial_reflecting.radial_reflecting()
 longitudinal_boundary = longitudinal_absorb.longitudinal_absorb()
-
 
 if compute_energy:
 
@@ -210,4 +197,3 @@ plt.xlabel(r'$r$')
 plt.ylabel(r'$p_r$')
 plt.tight_layout()
 plt.savefig('ptcl_r.png')
-

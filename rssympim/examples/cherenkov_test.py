@@ -27,11 +27,11 @@ omega_p = np.sqrt(4.*np.pi*n0*charge*charge/mass)
 k_p = omega_p/speed_of_light
 
 # compute the simulation domain volume
-plasma_lengths = 3
-plasma_widths  = 1
+plasma_lengths = 2
+plasma_widths  = 2
 modes_per_r = 8
 modes_per_z = 8
-ppm = 4
+ppm = 8
 
 l_r = plasma_widths*2.*np.pi/k_p # cm
 l_z = plasma_lengths*2.*np.pi/k_p # cm
@@ -48,12 +48,12 @@ n_macro_ptcls = ppm*n_r_modes*n_z_modes
 macro_weight = n_electrons/n_macro_ptcls
 
 # run for ten plasma periods
-run_time = 2.*np.pi/k_p
+run_time = 10*2.*np.pi/k_p
 
 
 # Create simulation objects
 ptcl_data = particle_data.particle_data(n_macro_ptcls, charge, mass, macro_weight)
-fld_data = field_data.field_data(l_r, l_z, n_r_modes, n_z_modes)
+fld_data = field_data.field_data(l_z, l_r, n_z_modes, n_r_modes)
 
 # Ten steps per fastest frequency
 dt = 0.1*2.*np.pi/np.amax(fld_data.omega)
@@ -66,10 +66,10 @@ temp = .01*mass*speed_of_light*macro_weight
 for ptcl_idx in range(0, n_macro_ptcls):
     # Uniform distribution in space
     ptcl_data.r[ptcl_idx] = np.random.random()*l_r
-    ptcl_data.z[ptcl_idx] = np.random.random()*l_z/3.
+    ptcl_data.z[ptcl_idx] = np.random.random()*l_z
     ptcl_data.pr[ptcl_idx] = np.random.normal(0.,temp)#*macro_weight*mass*speed_of_light
     ptcl_data.pz[ptcl_idx] = 10.*macro_weight*mass*speed_of_light #+ np.random.normal(0.,temp)
-    ptcl_data.ell[ptcl_idx] = ptcl_data.r[ptcl_idx]*ptcl_data.pr[ptcl_idx]
+    ptcl_data.ell[ptcl_idx] = ptcl_data.r[ptcl_idx]*np.random.normal(0.,temp)#*macro_weight*mass*speed_of_light
 
 # Create a thermal boundary
 radial_boundary = radial_thermal.radial_thermal(temp)
