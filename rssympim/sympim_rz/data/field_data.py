@@ -23,7 +23,7 @@ from rssympim.constants import constants as consts
 
 class field_data(object):
 
-    def __init__(self, L, R, n_modes_z, n_modes_r):
+    def __init__(self, L, R, n_modes_z, n_modes_r, is_periodic = False):
 
         self.n_modes_r = n_modes_r
         self.n_modes_z = n_modes_z
@@ -33,7 +33,11 @@ class field_data(object):
 
         self.kr = jn_zeros(0, self.n_modes_r)/R
         self.oneOkr = 1./self.kr
-        self.kz = np.pi*np.arange(1,self.n_modes_z+1)/L
+        # Two_pi for periodic boundaries, pi for conducting
+        if is_periodic:
+            self.kz = 2. * np.pi * np.arange(1, self.n_modes_z + 1) / L
+        else:
+            self.kz = np.pi * np.arange(1, self.n_modes_z + 1) / L
 
         # Needed for the normalization
         zero_zeros = jn_zeros(0, self.n_modes_r)
