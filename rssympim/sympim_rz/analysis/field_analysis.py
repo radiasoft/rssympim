@@ -35,7 +35,7 @@ class field_analysis:
         self.file_name = False
 
 
-    def plot_energy_spectrum(self, fig_name):
+    def plot_energy_spectrum(self, fig_name, scale=False):
         """
         Contour plot of the energy in the fields versus k_r and k_z
 
@@ -63,9 +63,14 @@ class field_analysis:
         Psqrd = P*P
         Qsqrd = Q*Q
 
-        Energy = 0.5*(Psqrd + (omega*Qsqrd)**2)
+        Energy = 0.5 * (Psqrd + (omega * Qsqrd) ** 2)
+
+        if scale:
+            Energy /= scale
+
 
         Energy_plot = plt.imshow(Energy.transpose(),
+                                 origin='lower',
                                  cmap=plt.cm.viridis,
                                  extent=[0, kr[-1], 0, kz[-1]],
                                  aspect=np.max(kr)/np.max(kz))
@@ -73,14 +78,17 @@ class field_analysis:
         plt.xlabel(r'$k_z$ [cm${}^{-1}$]')
         plt.ylabel(r'$k_r$ [cm${}^{-1}$]')
         cbar = plt.colorbar(Energy_plot)
-        cbar.ax.set_ylabel(r'$E$ [ergs]')
+        if scale:
+            cbar.ax.set_ylabel(r'$E/E_0$')
+        else:
+            cbar.ax.set_ylabel(r'$E$ [ergs]')
 
         plt.tight_layout()
         print 'Saving figure', fig_name
         plt.savefig(fig_name)
 
 
-    def plot_Ez(self, fig_name):
+    def plot_Ez(self, fig_name, scale=False):
         """
         Plot the longitudinal electric field in units of statV/cm.
 
@@ -95,6 +103,9 @@ class field_analysis:
         R = self.file.attrs['R']
         L = self.file.attrs['L']
 
+        if scale:
+            EZ /= scale
+
         Ez_plot = plt.imshow(EZ.transpose(),
                              cmap=plt.cm.RdBu,
                              extent=[0, L, 0, R],
@@ -103,14 +114,17 @@ class field_analysis:
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
         cbar = plt.colorbar(Ez_plot)
-        cbar.ax.set_ylabel(r'$E_z$ [statV/cm]')
+        if scale:
+            cbar.ax.set_ylabel(r'$E_z/E_0$')
+        else:
+            cbar.ax.set_ylabel(r'$E_z$ [statV/cm]')
 
         plt.tight_layout()
         print 'Saving figure', fig_name
         plt.savefig(fig_name)
 
 
-    def plot_Er(self, fig_name):
+    def plot_Er(self, fig_name, scale=False):
         """
         Plot the longitudinal electric field in units of statV/cm.
 
@@ -125,6 +139,9 @@ class field_analysis:
         R = self.file.attrs['R']
         L = self.file.attrs['L']
 
+        if scale:
+            ER /= scale
+
         Er_plot = plt.imshow(ER.transpose(),
                              cmap=plt.cm.RdBu,
                              extent=[0, L, 0, R],
@@ -133,7 +150,10 @@ class field_analysis:
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
         cbar = plt.colorbar(Er_plot)
-        cbar.ax.set_ylabel(r'$E_r$ [statV/cm]')
+        if scale:
+            cbar.ax.set_ylabel(r'$E_r/E_0$')
+        else:
+            cbar.ax.set_ylabel(r'$E_r$ [statV/cm]')
 
         plt.tight_layout()
         print 'Saving figure', fig_name
