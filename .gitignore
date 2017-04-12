@@ -67,3 +67,4 @@ target/
 
 # File types we don’t need
 *.png
+*.hdf5
