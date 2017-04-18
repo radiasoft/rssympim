@@ -6,6 +6,7 @@ Author: Stephen Webb
 
 import h5py
 from matplotlib import pyplot as plt
+import matplotlib.ticker as ticker
 from rssympim.constants import constants as consts
 import numpy as np
 from numpy import einsum, cos, sin
@@ -73,7 +74,8 @@ class field_analysis:
                                  origin='lower',
                                  cmap=plt.cm.viridis,
                                  extent=[0, kr[-1], 0, kz[-1]],
-                                 aspect=np.max(kr)/np.max(kz))
+                                 aspect=np.max(kr)/np.max(kz),
+                                 interpolation='gaussian')
 
         plt.xlabel(r'$k_z$ [cm${}^{-1}$]')
         plt.ylabel(r'$k_r$ [cm${}^{-1}$]')
@@ -98,7 +100,7 @@ class field_analysis:
 
         plt.clf()
 
-        EZ = self.compute_Ez()
+        EZ, RR, LL = self.compute_Ez()
 
         R = self.file.attrs['R']
         L = self.file.attrs['L']
@@ -109,7 +111,14 @@ class field_analysis:
         Ez_plot = plt.imshow(EZ.transpose(),
                              cmap=plt.cm.RdBu,
                              extent=[0, L, 0, R],
-                             origin='lower')
+                             origin='lower', interpolation='gaussian')
+
+        Ez_contour = plt.contour(LL, RR, EZ, colors='k')
+
+        #fmt = ticker.LogFormatterSciNotation()
+        #fmt.create_dummy_axis()
+
+        #plt.clabel(Ez_contour, inline=True, fontsize=9, fmt=fmt)
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
@@ -134,7 +143,7 @@ class field_analysis:
 
         plt.clf()
 
-        ER = self.compute_Er()
+        ER, RR, LL = self.compute_Er()
 
         R = self.file.attrs['R']
         L = self.file.attrs['L']
@@ -145,7 +154,14 @@ class field_analysis:
         Er_plot = plt.imshow(ER.transpose(),
                              cmap=plt.cm.RdBu,
                              extent=[0, L, 0, R],
-                             origin='lower')
+                             origin='lower', interpolation='gaussian')
+
+        Er_contour = plt.contour(LL, RR, ER, colors='k')
+
+        #fmt = ticker.LogFormatterSciNotation()
+        #fmt.create_dummy_axis()
+
+        #plt.clabel(Er_contour, inline=True, fontsize=9, fmt=fmt)
 
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
@@ -236,7 +252,7 @@ class field_analysis:
 
             EZ = einsum('ik, klm, ilm, ik->lm', mode_P, the_j0, the_cos, mode_mass)
 
-            return EZ
+            return EZ, RR, ZZ
 
 
         else:
@@ -291,7 +307,7 @@ class field_analysis:
 
             ER = einsum('ik, klm, ilm, ik, ik->lm', mode_P, the_j1, the_sin, radial_coeff, mode_mass)
 
-            return ER
+            return ER, RR, ZZ
 
 
         else:
