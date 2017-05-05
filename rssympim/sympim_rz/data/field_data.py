@@ -66,8 +66,7 @@ class field_data(object):
         self.ptcl_width_z = .25*2.*np.pi/max(self.kz)
         self.ptcl_width_r = .25*2.*np.pi/max(self.kr)
 
-        self.shape_function_z = 2*(1. - cos(self.kz*self.ptcl_width_z))/\
-                                (self.kz*self.kz*self.ptcl_width_z*self.ptcl_width_z)
+        self.shape_function_z = np.exp(-0.5*(self.kz*self.ptcl_width_z)**2)
 
 
     def convolved_j0(self, _x, delta_x):
