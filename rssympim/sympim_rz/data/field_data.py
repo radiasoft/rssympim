@@ -33,11 +33,7 @@ class field_data(object):
 
         self.kr = jn_zeros(0, self.n_modes_r)/R
         self.oneOkr = 1./self.kr
-        # Two_pi for periodic boundaries, pi for conducting
-        if is_periodic:
-            self.kz = 2. * np.pi * np.arange(1, self.n_modes_z + 1) / L
-        else:
-            self.kz = np.pi * np.arange(1, self.n_modes_z + 1) / L
+        self.kz = np.pi * np.arange(1, self.n_modes_z + 1) / L
 
         # Needed for the normalization
         zero_zeros = jn_zeros(0, self.n_modes_r)
@@ -54,7 +50,7 @@ class field_data(object):
                 self.radial_coeff[idx_z, idx_r] = self.kz[idx_z]/self.kr[idx_r]
                 self.mode_mass[idx_z, idx_r] = \
                     np.sqrt(consts.c/
-                            (.25*R*R*L*(j1(zero_zeros[idx_r])**2)*(1 + (self.kz[idx_z]/self.kr[idx_r])**2)))
+                            (.5*np.pi*R*R*L*(j1(zero_zeros[idx_r])**2)*(1 + (self.kz[idx_z]/self.kr[idx_r])**2)))
 
 
         self.delta_P = np.zeros((self.n_modes_z,self.n_modes_r))
