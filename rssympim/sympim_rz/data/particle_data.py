@@ -52,7 +52,6 @@ class particle_data:
 
     def compute_gamma_mc(self, field_data):
         """
-
         :param field_data:
         :return:
         """
@@ -69,7 +68,28 @@ class particle_data:
         """
 
         self.compute_gamma_mc(field_data)
-        return self.gamma_mc
+
+        # Return the actual energy in ergs, versus the particle Hamiltonian
+        # Note that this is not the "conserved quantity" that would be
+        # associated with the Hamiltonian.
+        return self.gamma_mc*consts.c
+
+
+    def compute_ptcl_hamiltonian(self, field_data):
+        """
+        Return the Hamiltonian conjugate to ct being the independent variable
+        :param field_data:
+        :return: H/c
+        """
+
+        return self.compute_gamma_mc(field_data)
+
+
+    def compute_ptcl_gamma(self, field_data):
+
+        energy = self.compute_ptcl_energy(field_data)
+
+        return energy / (self.mc*consts.c)
 
 
     def r_boundaries(self, fld_data):

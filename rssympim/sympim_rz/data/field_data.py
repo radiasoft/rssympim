@@ -245,7 +245,12 @@ class field_data(object):
         :return: numpy array with the field energy of each mode
         """
 
-        Qsqrd = self.mode_coords[:,:,1]*self.mode_coords[:,:,1]
-        Psqrd = self.mode_coords[:,:,0]*self.mode_coords[:,:,0]
+        Qsqrd = self.omega_coords[:,:,1]*self.omega_coords[:,:,1]
+        Psqrd = self.omega_coords[:,:,0]*self.omega_coords[:,:,0]
 
-        return 0.5*(Psqrd + self.omega*self.omega*Qsqrd)
+        Dsqrd = self.dc_coords[:,:,0]*self.dc_coords[:,:,0]
+
+        energy = 0.5*((Psqrd+Dsqrd)/self.mode_mass +
+                      self.mode_mass*self.omega*self.omega*Qsqrd)
+
+        return energy

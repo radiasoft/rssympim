@@ -34,10 +34,17 @@ class field_io:
         dump_file.attrs['L'] = field_class.domain_L
 
         modep_dset = dump_file.create_dataset(
-            'mode_p', data = field_class.mode_coords[:,:,0]
+            'p_omega', data = field_class.omega_coords[:,:,0]
         )
         modeq_dset = dump_file.create_dataset(
-            'mode_q', data = field_class.mode_coords[:,:,1]
+            'q_omega', data = field_class.omega_coords[:,:,1]
+        )
+
+        modep_dset = dump_file.create_dataset(
+            'p_dc', data = field_class.dc_coords[:,:,0]
+        )
+        modeq_dset = dump_file.create_dataset(
+            'q_dc', data = field_class.dc_coords[:,:,1]
         )
 
         # All the other coefficients can be built from kr and kz
