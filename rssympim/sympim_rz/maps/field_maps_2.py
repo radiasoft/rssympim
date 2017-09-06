@@ -11,6 +11,8 @@ class field_maps:
         n_modes_r = self.shape(kr)[0]
         n_modes_z = self.shape(kz)[0]
 
+        self.dt = _dt
+
         omega = np.sqrt(np.einsum('i,j->ij', kz*kz, kr*kr))
         M_omega = mode_mass*omega
 
@@ -60,12 +62,10 @@ class field_maps:
         :return:
         """
 
-        field_data.mode_coords = np.einsum('ijkl, ijl -> ijk',
+        field_data.omega_coords = np.einsum('ijkl, ijl -> ijk',
                                            self.rotation_matrices, field_data.mode_coords)
 
-        #for idx in range(0,self.n_modes):
-        #    field_data.mode_coords[idx] = np.dot(self.rotation_matrices[idx],
-        #                               field_data.mode_coords[idx])
+        field_data.dc_coords[:,1] += field_data.dc_coords[:,0]/field_data.mode_mass*self.dt
 
 
     def half_advance_forward(self, field_data):
@@ -75,12 +75,10 @@ class field_maps:
         :return:
         """
 
-        field_data.mode_coords = np.einsum('ijkl, ijl -> ijk',
+        field_data.omega_coords = np.einsum('ijkl, ijl -> ijk',
                                            self.half_for_rot_mat, field_data.mode_coords)
 
-        #for idx in range(0,self.n_modes):
-        #    field_data.mode_coords[idx] = np.dot(self.half_for_rot_mat[idx],
-        #                               field_data.mode_coords[idx])
+        field_data.dc_coords[:,1] += 0.5*field_data.dc_coords[:,0]/field_data.mode_mass*self.dt
 
 
     def half_advance_back(self, field_data):
@@ -90,9 +88,7 @@ class field_maps:
         :return:
         """
 
-        field_data.mode_coords = np.einsum('ijkl, ijl -> ijk',
+        field_data.omega_coords = np.einsum('ijkl, ijl -> ijk',
                                            self.half_bac_rot_mat, field_data.mode_coords)
 
-        #for idx in range(0,self.n_modes):
-        #    field_data.mode_coords[idx] = np.dot(self.half_bac_rot_mat[idx],
-        #                                    field_data.mode_coords[idx])
+        field_data.dc_coords[:,1] -= 0.5*field_data.dc_coords[:,0]/field_data.mode_mass*self.dt
