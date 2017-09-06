@@ -23,7 +23,7 @@ from rssympim.constants import constants as consts
 
 class field_data(object):
 
-    def __init__(self, L, R, n_modes_z, n_modes_r, is_periodic = False):
+    def __init__(self, L, R, n_modes_z, n_modes_r):
 
         self.n_modes_r = n_modes_r
         self.n_modes_z = n_modes_z
@@ -38,22 +38,21 @@ class field_data(object):
         # Needed for the normalization
         zero_zeros = jn_zeros(0, self.n_modes_r)
 
-        self.mode_coords = np.zeros((self.n_modes_z,self.n_modes_r, 2))
+        self.omega_coords = np.zeros((self.n_modes_z,self.n_modes_r, 2))
+        self.dc_coords = np.zeros((self.n_modes_z, self.n_modes_r, 2))
         self.mode_mass = np.ones((self.n_modes_z, self.n_modes_r))
-        self.radial_coeff = np.ones((self.n_modes_z, self.n_modes_r))
 
         self.omega = np.zeros((self.n_modes_z,self.n_modes_r))
         for idx_r in range(0,self.n_modes_r):
             for idx_z in range(0,self.n_modes_z):
                 self.omega[idx_z,idx_r]= \
                     np.sqrt(self.kr[idx_r]**2 +self.kz[idx_z]**2)
-                self.radial_coeff[idx_z, idx_r] = self.kz[idx_z]/self.kr[idx_r]
-                self.mode_mass[idx_z, idx_r] = \
-                    np.sqrt(consts.c/
-                            (.5*np.pi*R*R*L*(j1(zero_zeros[idx_r])**2)*(1 + (self.kz[idx_z]/self.kr[idx_r])**2)))
+                # Integral of cos^2(k_z z)*J_z(k_r r)^2 over the domain volume
+                self.mode_mass[idx_z, idx_r] = .5*R*R*L*(j1(zero_zeros[idx_r]))**2/4.
 
 
-        self.delta_P = np.zeros((self.n_modes_z,self.n_modes_r))
+        self.delta_P_dc = np.zeros((self.n_modes_z,self.n_modes_r))
+        self.delta_P_omega = np.zeros((self.n_modes_z,self.n_modes_r))
 
         # Particles are tent functions with widths the narrowest of the
         # k-vectors for each direction. Default for now is to have the
@@ -113,9 +112,10 @@ class field_data(object):
         convolved_j1 = self.convolved_j1(kr_cross_r, delta_u)
         convolved_sin = einsum('ij, i -> ij', sin(kz_cross_z), self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
+        modeQr = (np.einsum('k, ik -> ik', -self.kr, self.dc_coords[:,:,1]) +\
+                    np.einsum('i, ik -> ik', self.kz, self.omega_coords[:,:,1]))/self.omega
 
-        Ar = einsum('ik, kj, ij -> j', modeQ, convolved_j1, convolved_sin)*qOc
+        Ar = einsum('ik, kj, ij -> j', modeQr, convolved_j1, convolved_sin)*qOc
 
         return Ar
 
@@ -129,9 +129,10 @@ class field_data(object):
         int_convolved_j1 = einsum('kj, k -> kj', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
         d_convolved_sin_dz = einsum('ij, i -> ij', cos(kz_cross_z), self.kz*self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]*self.mode_mass*self.radial_coeff
+        modeQr = (np.einsum('k, ik -> ik', -self.kr, self.dc_coords[:,:,1]) +\
+                    np.einsum('i, ik -> ik', self.kz, self.omega_coords[:,:,1]))/self.omega
 
-        dFrdz = einsum('ik, kj, ij -> j', modeQ, int_convolved_j1, d_convolved_sin_dz)*qOc
+        dFrdz = einsum('ik, kj, ij -> j', modeQr, int_convolved_j1, d_convolved_sin_dz)*qOc
 
         return dFrdz
 
@@ -152,10 +153,12 @@ class field_data(object):
         convolved_j1 = einsum('kj, k -> kj', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
         convolved_sin = einsum('ij, i -> ij', sin(kz_cross_z), self.shape_function_z)
 
-        dFrdQ = einsum('kj, ij, ik, j -> ik', convolved_j1, convolved_sin,
-                       self.mode_mass*self.radial_coeff, qOc)
+        dFrdQ = einsum('kj, ij, j -> ik', convolved_j1, convolved_sin, qOc)
 
-        return dFrdQ
+        dFrdQ0     = dFrdQ*einsum('k, ik -> ik', -self.kr, 1./self.omega)
+        dFrdQomega = dFrdQ*einsum('i, ik -> ik', self.kz, 1./self.omega)
+
+        return dFrdQ0, dFrdQomega
 
 
     def compute_Az(self, r, z, qOc):
@@ -173,9 +176,10 @@ class field_data(object):
         convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
         convolved_cos = einsum('ij, i -> ij', cos(kz_cross_z), self.shape_function_z)
 
-        modeQ = self.mode_coords[:,:,1]*self.mode_mass
+        modeQz = (np.einsum('k, ik -> ik', self.kz, self.dc_coords[:,:,1]) +\
+                    np.einsum('i, ik -> ik', self.kr, self.omega_coords[:,:,1]))/self.omega
 
-        Az = einsum('ik, kj, ij -> j', modeQ, convolved_j0, convolved_cos)*qOc
+        Az = einsum('ik, kj, ij -> j', modeQz, convolved_j0, convolved_cos)*qOc
 
         return Az
 
@@ -189,9 +193,10 @@ class field_data(object):
         d_convolved_j0_dr = einsum('kj, k -> kj',-self.convolved_j1(kr_cross_r, delta_u), self.kr)
         int_convolved_cos_dz = einsum('ij, i -> ij', sin(kz_cross_z), self.shape_function_z/self.kz)
 
-        modeQ = self.mode_coords[:,:,1]*self.mode_mass
+        modeQz = (np.einsum('k, ik -> ik', self.kz, self.dc_coords[:,:,1]) +\
+                    np.einsum('i, ik -> ik', self.kr, self.omega_coords[:,:,1]))/self.omega
 
-        dFzdr = einsum('ik, kj, ij -> j', modeQ, d_convolved_j0_dr, int_convolved_cos_dz)*qOc
+        dFzdr = einsum('ik, kj, ij -> j', modeQz, d_convolved_j0_dr, int_convolved_cos_dz)*qOc
 
         return dFzdr
 
@@ -212,9 +217,12 @@ class field_data(object):
         convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
         int_convolved_cos_dz = einsum('ij, i -> ij', sin(kz_cross_z), self.shape_function_z/self.kz)
 
-        dFzdQ = einsum('kj, ij, ik, j -> ik', convolved_j0, int_convolved_cos_dz, self.mode_mass, qOc)
+        dFzdQ = einsum('kj, ij, j -> ik', convolved_j0, int_convolved_cos_dz, qOc)
 
-        return dFzdQ
+        dFrdQ0     = dFzdQ*einsum('k, ik -> ik', self.kz, 1./self.omega)
+        dFrdQomega = dFzdQ*einsum('i, ik -> ik', self.kr, 1./self.omega)
+
+        return dFrdQ0, dFrdQomega
 
 
     def finalize_fields(self):
@@ -224,8 +232,11 @@ class field_data(object):
         """
         # Commented out until the MPI implementation is ready
         #self.comm.allreduce(self.delta_P, op=MPI.SUM, root=0)
-        self.mode_coords[:,:,0] += self.delta_P[:,:]
-        self.delta_P = np.zeros((self.n_modes_z,self.n_modes_r))
+        self.dc_coords[:,:,0]    += self.delta_P_dc[:,:]
+        self.omega_coords[:,:,0] += self.delta_P_omega[:,:]
+
+        self.delta_P_dc    = np.zeros((self.n_modes_z,self.n_modes_r))
+        self.delta_P_omega = np.zeros((self.n_modes_z,self.n_modes_r))
 
 
     def compute_energy(self):
