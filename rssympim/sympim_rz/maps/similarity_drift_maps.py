@@ -13,7 +13,12 @@ class similarity_drift_maps():
         :param ptcl_data:
         :return: nothing
         """
-        field_data.delta_P -= field_data.compute_dFrdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+
+        deltap = field_data.compute_dFrdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+
+        field_data.delta_P_dc    -= deltap[0]
+        field_data.delta_P_omega -= deltap[1]
+
 
 
     def A_r_inverse(self, field_data, ptcl_data):
@@ -24,8 +29,10 @@ class similarity_drift_maps():
         :param ptcl_data:
         :return: nothing
         """
-        field_data.delta_P += field_data.compute_dFrdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        deltap = field_data.compute_dFrdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
 
+        field_data.delta_P_dc    += deltap[0]
+        field_data.delta_P_omega += deltap[1]
 
     def A_z(self, field_data, ptcl_data):
         """
@@ -34,8 +41,10 @@ class similarity_drift_maps():
         :param ptcl_data:
         :return: nothing
         """
-        field_data.delta_P -= field_data.compute_dFzdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        deltap = field_data.compute_dFzdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
 
+        field_data.delta_P_dc    -= deltap[0]
+        field_data.delta_P_omega -= deltap[1]
 
     def A_z_inverse(self, field_data, ptcl_data):
         """
@@ -45,4 +54,7 @@ class similarity_drift_maps():
         :param ptcl_data:
         :return: nothing
         """
-        field_data.delta_P += field_data.compute_dFzdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+        deltap = field_data.compute_dFzdQ(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+
+        field_data.delta_P_dc    += deltap[0]
+        field_data.delta_P_omega += deltap[1]
