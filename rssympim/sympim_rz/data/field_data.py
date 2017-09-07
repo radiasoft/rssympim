@@ -246,12 +246,17 @@ class field_data(object):
         :return: numpy array with the field energy of each mode
         """
 
+        # radiation energy
         Qsqrd = self.omega_coords[:,:,1]*self.omega_coords[:,:,1]
         Psqrd = self.omega_coords[:,:,0]*self.omega_coords[:,:,0]
 
+        e_rad = (Psqrd/self.mode_mass + (self.mode_mass*self.omega**2)*Qsqrd)/2
+
+        # space charge energy
         Dsqrd = self.dc_coords[:,:,0]*self.dc_coords[:,:,0]
 
-        energy = 0.5*((Psqrd+Dsqrd)/self.mode_mass +
-                      self.mode_mass*self.omega*self.omega*Qsqrd)
+        e_drft = Dsqrd/(2.*self.mode_mass)
+
+        energy = e_rad+e_drft
 
         return energy
