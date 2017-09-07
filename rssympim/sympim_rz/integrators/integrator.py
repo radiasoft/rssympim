@@ -3,12 +3,12 @@ from rssympim.sympim_rz.maps import ptcl_maps, field_maps, similarity_maps
 
 class integrator:
 
-    def __init__(self, dt, frequencies):
+    def __init__(self, dt, fld_data, ptcl_data):
 
         self.dt = dt
         self.sim_maps = similarity_maps.similarity_maps()
         self.ptcl_maps = ptcl_maps.ptcl_maps(dt)
-        self.field_maps = field_maps.field_maps(frequencies, dt)
+        self.field_maps = field_maps.field_maps(fld_data, dt)
 
 
     def single_step_fields(self, field_data):
@@ -26,17 +26,17 @@ class integrator:
         # M_ell A_r D_r A_r^-1 A_z D_z A_z^-1 A_r D_r A_r^-1 M_ell
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 
-        self.sim_maps.A_r(field_data, ptcl_data)
-        self.ptcl_maps.half_drift_r(ptcl_data, field_data)
         self.sim_maps.A_r_inverse(field_data, ptcl_data)
+        self.ptcl_maps.half_drift_r(ptcl_data, field_data)
+        self.sim_maps.A_r(field_data, ptcl_data)
 
-        self.sim_maps.A_z(field_data, ptcl_data)
-        self.ptcl_maps.drift_z(ptcl_data)
         self.sim_maps.A_z_inverse(field_data, ptcl_data)
+        self.ptcl_maps.drift_z(ptcl_data)
+        self.sim_maps.A_z(field_data, ptcl_data)
 
-        self.sim_maps.A_r(field_data, ptcl_data)
-        self.ptcl_maps.half_drift_r(ptcl_data, field_data)
         self.sim_maps.A_r_inverse(field_data, ptcl_data)
+        self.ptcl_maps.half_drift_r(ptcl_data, field_data)
+        self.sim_maps.A_r(field_data, ptcl_data)
 
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 
