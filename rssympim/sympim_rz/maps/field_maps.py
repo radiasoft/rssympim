@@ -14,7 +14,8 @@ class field_maps:
 
         self.dt = _dt
 
-        omega = np.sqrt(np.einsum('i,j->ij', kz*kz, kr*kr))
+        omega = fld_data.omega
+
         M_omega = mode_mass*omega
 
         self.phase_advance = omega*_dt
@@ -23,38 +24,38 @@ class field_maps:
         self.half_for_rot_mat  = np.zeros((n_modes_z, n_modes_r,2,2))
         self.half_bac_rot_mat  = np.zeros((n_modes_z, n_modes_r,2,2))
 
-        for idx_1 in range(0, n_modes_z):
-            for idx_2 in range(0, n_modes_r):
+        for idx_z in range(0, n_modes_z):
+            for idx_r in range(0, n_modes_r):
 
                 # Compute the full rotation matrices
-                self.rotation_matrices[idx_1,idx_2,0,0] = \
-                    np.cos(self.phase_advance[idx_1,idx_2])
-                self.rotation_matrices[idx_1,idx_2,1,0] = \
-                    -np.sin(self.phase_advance[idx_1,idx_2])/M_omega[idx_1,idx_2]
-                self.rotation_matrices[idx_1,idx_2,0,1] = \
-                    np.sin(self.phase_advance[idx_1,idx_2])*M_omega[idx_1,idx_2]
-                self.rotation_matrices[idx_1,idx_2,1,1] =\
-                    np.cos(self.phase_advance[idx_1,idx_2])
+                self.rotation_matrices[idx_z,idx_r,0,0] = \
+                    np.cos(self.phase_advance[idx_z,idx_r])
+                self.rotation_matrices[idx_z,idx_r,1,0] = \
+                    np.sin(self.phase_advance[idx_z,idx_r])/M_omega[idx_z,idx_r]
+                self.rotation_matrices[idx_z,idx_r,0,1] = \
+                    -np.sin(self.phase_advance[idx_z,idx_r])*M_omega[idx_z,idx_r]
+                self.rotation_matrices[idx_z,idx_r,1,1] =\
+                    np.cos(self.phase_advance[idx_z,idx_r])
 
                 # Compute the half rotation matrices and their inverses
 
-                self.half_for_rot_mat[idx_1, idx_2, 0,0] = \
-                    np.cos(.5*self.phase_advance[idx_1, idx_2])
-                self.half_for_rot_mat[idx_1, idx_2, 1,0] = \
-                    -np.sin(.5*self.phase_advance[idx_1,idx_2])/M_omega[idx_1,idx_2]
-                self.half_for_rot_mat[idx_1, idx_2, 0,1] = \
-                    np.sin(.5*self.phase_advance[idx_1,idx_2])*M_omega[idx_1,idx_2]
-                self.half_for_rot_mat[idx_1, idx_2, 1,1] =\
-                    np.cos(.5*self.phase_advance[idx_1,idx_2])
+                self.half_for_rot_mat[idx_z, idx_r, 0,0] = \
+                    np.cos(.5*self.phase_advance[idx_z, idx_r])
+                self.half_for_rot_mat[idx_z, idx_r, 1,0] = \
+                    np.sin(.5*self.phase_advance[idx_z,idx_r])/M_omega[idx_z,idx_r]
+                self.half_for_rot_mat[idx_z, idx_r, 0,1] = \
+                    -np.sin(.5*self.phase_advance[idx_z,idx_r])*M_omega[idx_z,idx_r]
+                self.half_for_rot_mat[idx_z, idx_r, 1,1] =\
+                    np.cos(.5*self.phase_advance[idx_z,idx_r])
 
-                self.half_bac_rot_mat[idx_1,idx_2,0,0] = \
-                    np.cos(-.5*self.phase_advance[idx_1,idx_2])
-                self.half_bac_rot_mat[idx_1,idx_2,1,0] = \
-                    -np.sin(-.5*self.phase_advance[idx_1,idx_2])/M_omega[idx_1,idx_2]
-                self.half_bac_rot_mat[idx_1,idx_2,0,1] = \
-                    np.sin(-.5*self.phase_advance[idx_1,idx_2])*M_omega[idx_1,idx_2]
-                self.half_bac_rot_mat[idx_1,idx_2,1,1] = \
-                    np.cos(-.5*self.phase_advance[idx_1,idx_2])
+                self.half_bac_rot_mat[idx_z,idx_r,0,0] = \
+                    np.cos(-.5*self.phase_advance[idx_z,idx_r])
+                self.half_bac_rot_mat[idx_z,idx_r,1,0] = \
+                    np.sin(-.5*self.phase_advance[idx_z,idx_r])/M_omega[idx_z,idx_r]
+                self.half_bac_rot_mat[idx_z,idx_r,0,1] = \
+                    -np.sin(-.5*self.phase_advance[idx_z,idx_r])*M_omega[idx_z,idx_r]
+                self.half_bac_rot_mat[idx_z,idx_r,1,1] = \
+                    np.cos(-.5*self.phase_advance[idx_z,idx_r])
 
 
     def advance_forward(self, field_data):
