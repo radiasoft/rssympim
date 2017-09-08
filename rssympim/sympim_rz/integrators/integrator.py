@@ -3,7 +3,7 @@ from rssympim.sympim_rz.maps import ptcl_maps, field_maps, similarity_maps
 
 class integrator:
 
-    def __init__(self, dt, fld_data, ptcl_data):
+    def __init__(self, dt, fld_data):
 
         self.dt = dt
         self.sim_maps = similarity_maps.similarity_maps()
