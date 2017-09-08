@@ -82,7 +82,9 @@ class particle_data:
         :return: H/c
         """
 
-        return self.compute_gamma_mc(field_data)
+        self.compute_gamma_mc(field_data)
+
+        return self.gamma_mc
 
 
     def compute_ptcl_gamma(self, field_data):
