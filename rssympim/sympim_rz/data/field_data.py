@@ -177,8 +177,8 @@ class field_data(object):
         convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
         convolved_cos = einsum('ij, i -> ij', cos(kz_cross_z), self.shape_function_z)
 
-        modeQz = (np.einsum('k, ik -> ik', self.kz, self.dc_coords[:,:,1]) +\
-                    np.einsum('i, ik -> ik', self.kr, self.omega_coords[:,:,1]))/self.omega
+        modeQz = (np.einsum('i, ik -> ik', self.kz, self.dc_coords[:,:,1]) +\
+                    np.einsum('k, ik -> ik', self.kr, self.omega_coords[:,:,1]))/self.omega
 
         Az = einsum('ik, kj, ij -> j', modeQz, convolved_j0, convolved_cos)*qOc
 
@@ -194,8 +194,8 @@ class field_data(object):
         d_convolved_j0_dr = einsum('kj, k -> kj',-self.convolved_j1(kr_cross_r, delta_u), self.kr)
         int_convolved_cos_dz = einsum('ij, i -> ij', sin(kz_cross_z), self.shape_function_z/self.kz)
 
-        modeQz = (np.einsum('k, ik -> ik', self.kz, self.dc_coords[:,:,1]) +\
-                    np.einsum('i, ik -> ik', self.kr, self.omega_coords[:,:,1]))/self.omega
+        modeQz = (np.einsum('i, ik -> ik', self.kz, self.dc_coords[:,:,1]) +\
+                    np.einsum('k, ik -> ik', self.kr, self.omega_coords[:,:,1]))/self.omega
 
         dFzdr = einsum('ik, kj, ij -> j', modeQz, d_convolved_j0_dr, int_convolved_cos_dz)*qOc
 
@@ -220,8 +220,8 @@ class field_data(object):
 
         dFzdQ = einsum('kj, ij, j -> ik', convolved_j0, int_convolved_cos_dz, qOc)
 
-        dFrdQ0     = dFzdQ*einsum('k, ik -> ik', self.kz, 1./self.omega)
-        dFrdQomega = dFzdQ*einsum('i, ik -> ik', self.kr, 1./self.omega)
+        dFrdQ0     = dFzdQ*einsum('i, ik -> ik', self.kz, 1./self.omega)
+        dFrdQomega = dFzdQ*einsum('k, ik -> ik', self.kr, 1./self.omega)
 
         return dFrdQ0, dFrdQomega
 
