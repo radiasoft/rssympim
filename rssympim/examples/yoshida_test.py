@@ -29,14 +29,14 @@ volume = np.pi*l_r*l_r*l_z
 n_electrons = n0*volume
 
 # Simulation parameters
-n_macro_ptcls = 101
+n_macro_ptcls = 1000
 macro_weight = n_electrons/n_macro_ptcls
-n_r_modes = 2
-n_z_modes = 5
+n_r_modes = 10
+n_z_modes = 10
 
 # Create simulation objects
 ptcl_data = particle_data.particle_data(n_macro_ptcls, charge, mass, macro_weight)
-fld_data = field_data.field_data(l_z, l_r, n_z_modes, n_r_modes)
+fld_data = field_data.field_data(l_r, l_z, n_r_modes, n_z_modes)
 
 def create_init_conds(_ptcl_data, _field_data):
 
@@ -60,13 +60,10 @@ E = []
 t = []
 
 E0 = tot_energy
-
-print E0
-
-n_steps = 150
+n_steps = 60
 step = 0
 
-dt0 = 10*2*np.pi/np.amax(fld_data.omega)
+dt0 = 2.*np.pi/np.amax(fld_data.omega)
 
 while step < n_steps:
 
@@ -76,13 +73,25 @@ while step < n_steps:
     # Span dt over decades
     dt = dt0/((1.1)**step)
 
-    # Create the new integrator
-    my_integrator = integrator.integrator(dt, fld_data)
+    # Create the new integrator w/ Yoshida coefficients
+    x0 = -(2.**(1./3.)/(2.-2.**(1./3.)))
+    x1 = (1./(2.-2.**(1./3.)))
 
-    # Integrate a single step
-    my_integrator.half_field_forward(fld_data)
-    my_integrator.single_step_ptcl(ptcl_data, fld_data)
-    my_integrator.half_field_forward(fld_data)
+    forward_integrator = integrator.integrator(x1*dt, fld_data)
+    backward_integrator = integrator.integrator(x0*dt, fld_data)
+
+    # Integrate a single step w/ 4th order
+    forward_integrator.half_field_forward(fld_data)
+    forward_integrator.single_step_ptcl(ptcl_data, fld_data)
+    forward_integrator.half_field_forward(fld_data)
+
+    backward_integrator.half_field_forward(fld_data)
+    backward_integrator.single_step_ptcl(ptcl_data, fld_data)
+    backward_integrator.half_field_forward(fld_data)
+
+    forward_integrator.half_field_forward(fld_data)
+    forward_integrator.single_step_ptcl(ptcl_data, fld_data)
+    forward_integrator.half_field_forward(fld_data)
 
     particle_energies = ptcl_data.compute_ptcl_hamiltonian(fld_data)
     field_energies = fld_data.compute_energy()
@@ -97,8 +106,8 @@ t = np.amax(fld_data.omega)*np.array(t)/(2.*np.pi)
 E = np.array(E)
 
 plt.loglog(t, E, label='error')
-plt.loglog(t, (t*t*t)/10**3, label=r'$t^{3}$', alpha=0.5, linestyle='-.')
-plt.loglog(t, (t*t)/10**4, label=r'$t^{2}$', alpha=0.5, linestyle='--')
+plt.loglog(t, 2.*(t**5)/10**6, label=r'$t^{5}$', alpha=0.5, linestyle='-.')
+#plt.loglog(t, (t**6)/10**5, label=r'$t^{6}$', alpha=0.5, linestyle='--')
 plt.xlabel(r'$(c \Delta t) \times \frac{k_{max.}}{2 \pi}$')
 plt.ylabel(r'$\left | \frac{\Delta {H}}{{H}_0} \right |$')
 plt.legend()
