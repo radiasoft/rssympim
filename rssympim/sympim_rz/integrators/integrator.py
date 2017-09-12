@@ -1,6 +1,5 @@
 from rssympim.sympim_rz.maps import ptcl_maps, field_maps, similarity_maps
 
-
 class integrator:
 
     def __init__(self, dt, fld_data):
@@ -23,7 +22,7 @@ class integrator:
         ptcl_data.compute_gamma_mc(field_data)
 
         # Update sequence goes
-        # M_ell A_r D_r A_r^-1 A_z D_z A_z^-1 A_r D_r A_r^-1 M_ell
+        # M_ell S_r D_r S_r^-1 S_z D_z S_z^-1 S_r D_r S_r^-1 M_ell
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 
         self.sim_maps.S_r(field_data, ptcl_data)
