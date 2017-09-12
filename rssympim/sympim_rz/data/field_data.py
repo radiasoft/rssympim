@@ -97,6 +97,40 @@ class field_data(object):
                 j0(_x+0.5*delta_x))/6.
 
 
+    def compute_S_r_kick(self, r, z, qOc):
+
+        """
+                Evaluate Ar for a set of particles
+                :param _r: radial coordinates
+                :param _z: longitudinal coordinates
+                :return: Ar, a numpy array
+                """
+
+        kz_cross_z = einsum('z, p -> zp', self.kz, z)
+        kr_cross_r = einsum('r, p -> rp', self.kr, r)
+        delta_r = np.ones(np.size(r)) * self.ptcl_width_r
+        delta_u = einsum('r, p -> rp', self.kr, delta_r)
+
+        # Calculate the convolution quantities we need
+        convolved_j1 = self.convolved_j1(kr_cross_r, delta_u)
+        convolved_sin = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z)
+        int_convolved_j1 = einsum('rp, r -> rp', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
+        d_convolved_sin_dz = einsum('zp, z -> zp', cos(kz_cross_z), self.kz*self.shape_function_z)
+
+        # Calculate Q_r for each mode
+        modeQr = (np.einsum('r, zr -> zr', -self.kr, self.dc_coords[:, :, 1]) + \
+                  np.einsum('z, zr -> zr', self.kz, self.omega_coords[:, :, 1])) / self.omega
+
+        kick_z = einsum('zr, rp, zp -> p', modeQr, int_convolved_j1, d_convolved_sin_dz)*qOc
+        kick_r = einsum('zr, rp, zp -> p', modeQr, convolved_j1, convolved_sin) * qOc
+        dFrdQ = einsum('rp, zp, p -> zr', int_convolved_j1, convolved_sin, qOc)
+
+        kick_Q0     = dFrdQ*einsum('r, zr -> zr', -self.kr, 1./self.omega)
+        kick_Qomega = dFrdQ*einsum('z, zr -> zr', self.kz, 1./self.omega)
+
+        return kick_z, kick_r, kick_Q0, kick_Qomega
+
+
     def compute_Ar(self, r, z, qOc):
         """
         Evaluate Ar for a set of particles
@@ -120,45 +154,40 @@ class field_data(object):
         return Ar
 
 
-    def compute_dFrdz(self, r, z, qOc):
+    def compute_S_z_kick(self, r, z, qOc):
 
-        kr_cross_r = einsum('r, p -> rp', self.kr, r)
-        kz_cross_z = einsum('z, p -> zp', self.kz, z)
-        delta_r = np.ones(np.size(r))*self.ptcl_width_r
-        delta_u = einsum('r, p -> rp', self.kr, delta_r)
-        int_convolved_j1 = einsum('rp, r -> rp', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
-        d_convolved_sin_dz = einsum('zp, z -> zp', cos(kz_cross_z), self.kz*self.shape_function_z)
-
-        modeQr = (np.einsum('r, zr -> zr', -self.kr, self.dc_coords[:,:,1]) +\
-                    np.einsum('z, zr -> zr', self.kz, self.omega_coords[:,:,1]))/self.omega
-
-        dFrdz = einsum('zr, rp, zp -> p', modeQr, int_convolved_j1, d_convolved_sin_dz)*qOc
-
-        return dFrdz
-
-
-    def compute_dFrdQ(self, r, z, qOc):
         """
-        Evaluate Fr for a set of particles
+        Evaluate the kicks for a set of particles
         :param _r: radial coordinates
         :param _z: longitudinal coordinates
-        :return: Fr, a numpy array
+        :return: Ar, a numpy array
         """
 
-        # Unlike the above functions, this sums over the particles not the modes
-        kr_cross_r = einsum('r, p -> rp', self.kr, r)
         kz_cross_z = einsum('z, p -> zp', self.kz, z)
+        kr_cross_r = einsum('r, p -> rp', self.kr, r)
         delta_r = np.ones(np.size(r)) * self.ptcl_width_r
         delta_u = einsum('r, p -> rp', self.kr, delta_r)
-        int_convolved_j1 = einsum('rp, r -> rp', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
-        convolved_sin = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z)
 
-        dFrdQ = einsum('rp, zp, p -> zr', int_convolved_j1, convolved_sin, qOc)
+        # Calculate the convolution quantities we need
+        convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
+        convolved_cos = einsum('zp, z -> zp', cos(kz_cross_z), self.shape_function_z)
+        d_convolved_j0_dr = einsum('rp, r -> rp', -self.convolved_j1(kr_cross_r, delta_u), self.kr)
+        int_convolved_cos_dz = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z/self.kz)
 
-        dFrdQ0     = dFrdQ*einsum('r, zr -> zr', -self.kr, 1./self.omega)
-        dFrdQomega = dFrdQ*einsum('z, zr -> zr', self.kz, 1./self.omega)
+        # Calculate Q_z for each mode
+        modeQz = (np.einsum('z, zr -> zr', self.kz, self.dc_coords[:,:,1]) +\
+                    np.einsum('r, zr -> zr', self.kr, self.omega_coords[:,:,1]))/self.omega
 
-        return dFrdQ0, dFrdQomega
+        kick_z = einsum('zr, rp, zp -> p', modeQz, convolved_j0, convolved_cos)*qOc
+        kick_r = einsum('zr, rp, zp -> p', modeQz, d_convolved_j0_dr, int_convolved_cos_dz)*qOc
+
+        dFzdQ = einsum('rp, zp, p -> zr', convolved_j0, int_convolved_cos_dz, qOc)
+
+        kick_Q0     = dFzdQ*einsum('z, zr -> zr', self.kz, 1./self.omega)
+        kick_Qomega = dFzdQ*einsum('r, zr -> zr', self.kr, 1./self.omega)
+
+
+        return kick_z, kick_r, kick_Q0, kick_Qomega
 
 
     def compute_Az(self, r, z, qOc):
@@ -182,47 +211,6 @@ class field_data(object):
         Az = einsum('zr, rp, zp -> p', modeQz, convolved_j0, convolved_cos)*qOc
 
         return Az
-
-
-    def compute_dFzdr(self, r, z, qOc):
-
-        kr_cross_r = einsum('r, p -> rp', self.kr, r)
-        kz_cross_z = einsum('z, p -> zp', self.kz, z)
-        delta_r = np.ones(np.size(r)) * self.ptcl_width_r
-        delta_u = einsum('r, p -> rp', self.kr, delta_r)
-        d_convolved_j0_dr = einsum('rp, r -> rp', -self.convolved_j1(kr_cross_r, delta_u), self.kr)
-        int_convolved_cos_dz = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z/self.kz)
-
-        modeQz = (np.einsum('z, zr -> zr', self.kz, self.dc_coords[:,:,1]) +\
-                    np.einsum('r, zr -> zr', self.kr, self.omega_coords[:,:,1]))/self.omega
-
-        dFzdr = einsum('zr, rp, zp -> p', modeQz, d_convolved_j0_dr, int_convolved_cos_dz)*qOc
-
-        return dFzdr
-
-
-    def compute_dFzdQ(self, r, z, qOc):
-        """
-        Evaluate Fz for a set of particles
-        :param _r: radial coordinates
-        :param _z: longitudinal coordinates
-        :return: Fz, a numpy array
-        """
-
-        # Unlike the above functions, this sums over the particles not the modes
-        kr_cross_r = einsum('r, p -> rp', self.kr, r)
-        kz_cross_z = einsum('z, p -> zp', self.kz, z)
-        delta_r = np.ones(np.size(r))*self.ptcl_width_r
-        delta_u = einsum('r, p -> rp', self.kr, delta_r)
-        convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
-        int_convolved_cos_dz = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z/self.kz)
-
-        dFzdQ = einsum('rp, zp, p -> zr', convolved_j0, int_convolved_cos_dz, qOc)
-
-        dFrdQ0     = dFzdQ*einsum('z, zr -> zr', self.kz, 1./self.omega)
-        dFrdQomega = dFzdQ*einsum('r, zr -> zr', self.kr, 1./self.omega)
-
-        return dFrdQ0, dFrdQomega
 
 
     def finalize_fields(self):
