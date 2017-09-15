@@ -46,11 +46,15 @@ class field_analysis:
 
         plt.clf()
 
-        P = np.array(self.file.get('mode_p'))
-        Q = np.array(self.file.get('mode_q'))
+        P_omega = np.array(self.file.get('p_omega'))
+        Q_omega = np.array(self.file.get('q_omega'))
+
+        P_dc = np.array(self.file.get('p_dc'))
 
         kr = self.file.get('kr')
         kz = self.file.get('kz')
+
+        mm = self.file.get('mode_mass')
 
         n_modes_r = np.shape(kr)[0]
         n_modes_z = np.shape(kz)[0]
@@ -61,10 +65,13 @@ class field_analysis:
                 omega[idx_z, idx_r] = \
                     np.sqrt(kr[idx_r] ** 2 + kz[idx_z] ** 2)
 
-        Psqrd = P*P
-        Qsqrd = Q*Q
+        P_O_sqrd = P_omega*P_omega
+        Q_O_sqrd = Q_omega*Q_omega
 
-        Energy = 0.5 * (Psqrd + (omega * Qsqrd) ** 2)
+        P_D_sqrd = P_dc*P_dc
+
+        Energy = 0.5 * (P_O_sqrd/mm + mm*(omega * Q_O_sqrd) ** 2)
+        Energy += 0.5 * P_D_sqrd/mm
 
         if scale:
             Energy /= scale
@@ -223,6 +230,7 @@ class field_analysis:
             # get the k-vectors
             kr = self.file.get('kr')
             kz = self.file.get('kz')
+            mm = self.file.get('mode_mass')
 
             n_modes_r = np.shape(kr)[0]
             n_modes_z = np.shape(kz)[0]

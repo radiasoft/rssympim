@@ -63,6 +63,45 @@ class field_data(object):
 
         self.shape_function_z = np.exp(-0.5*(self.kz*self.ptcl_width_z)**2)
 
+        # These are the parameters required for the moving window,
+        # which when applied moves the fields along by the shortest wavelength resolved.
+        # For a spectral code, this is a projection from one cylindrical basis to another
+        # translated by mw_d -- convolution integrals and the like.
+        mw_d = np.pi/np.max(self.kz)
+        eikL = np.exp(1.j*self.kz*self.domain_L)
+        eikd = np.exp(1.j*self.kz*mw_d)
+
+        # Build a matrix for this stuff
+        matrix_eikd_sum = np.einsum('i,j -> ij', eikd, eikd)
+        matrix_eikL_sum = np.einsum('i,j -> ij', eikL, eikL)
+
+        matrix_eikd_diff = np.einsum('i,j -> ij', eikd, 1. / eikd)
+        matrix_eikL_diff = np.einsum('i,j -> ij', eikL, 1. / eikL)
+
+        Ki, Kj = np.meshgrid(self.kz, self.kz)
+
+        oneOplus = 1. / (1.j * (Ki + Kj))
+        # This will have pythonic 'inf' along the diagonal, and will be handled later
+        oneOminus = 1. / (1.j * (Ki - Kj))
+
+        # Let's create the two individual terms that appear in the moving window
+        sum_matrix  = np.einsum('ij, ij->ij', (matrix_eikL_sum-matrix_eikd_sum), oneOplus)
+        diff_matrix = np.einsum('ij, ij->ij', (matrix_eikL_diff-matrix_eikd_diff), oneOminus)
+
+        # diff_matrix has pythonic 'nan' along the diagonal since 0.*float('inf') = nan, but
+        # L'Hopital's Rule says that these elements are actually zero
+        diff_matrix[np.isnan(diff_matrix)] = 0.
+
+        # Both arrays have a phase multiplier
+
+        sum_matrix = np.einsum('ij, j -> ij', sum_matrix, 1./eikd)
+        diff_matrix = np.einsum('ij, j -> ij', diff_matrix, 1./eikd)
+
+        # Compute the final matrices that tell you how the field amplitudes change
+        # when projected on a new basis shifted d to the right/
+        self.r_shift_matrix = 0.5*np.real(sum_matrix + diff_matrix)
+        self.z_shift_matrix = -0.5*np.real(sum_matrix - diff_matrix)
+
 
     def convolved_j0(self, _x, delta_x):
         """
@@ -72,9 +111,9 @@ class field_data(object):
         :return:
         """
 
-        return (j0(_x-0.5*delta_x) +
+        return (j0(_x - 0.5 * delta_x) +
                 4.*j0(_x) +
-                j0(_x+0.5*delta_x))/6.
+                j0(_x + 0.5 * delta_x)) / 6.
 
 
     def convolved_j1(self, _x, delta_x):
@@ -247,3 +286,18 @@ class field_data(object):
         energy = e_rad+e_drft
 
         return energy
+
+
+    def apply_moving_window(self):
+        """
+        Shift the fields onto a new basis a distance d to the right
+        :return:
+        """
+
+        # shift the r coordinates
+        self.dc_coords = np.einsum('zjn, rj -> zrn', self.dc_coords, self.r_shift_matrix)
+        self.omega_coords = np.einsum('zjn, rj -> zrn', self.omega_coords, self.r_shift_matrix)
+
+        # shift the z coordinates
+        self.dc_coords = np.einsum('jrn, zj -> zjn', self.dc_coords, self.z_shift_matrix)
+        self.omega_coords = np.einsum('jrn, zj -> zjn', self.omega_coords, self.z_shift_matrix)
