@@ -20,6 +20,7 @@ class field_io:
         self.kr = field_class.kr
         self.kz = field_class.kz
         self.mode_mass = field_class.mode_mass
+        self.omega = field_class.omega
 
 
     def dump_field(self, field_class, step_number):
@@ -57,6 +58,10 @@ class field_io:
         )
         mm_dset = dump_file.create_dataset(
             'mode_mass', data = self.mode_mass
+        )
+
+        om_dset = dump_file.create_dataset(
+            'omega', data = self.omega
         )
 
         dump_file.close()

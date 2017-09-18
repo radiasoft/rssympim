@@ -228,9 +228,10 @@ class field_analysis:
             L = self.file.attrs['L']
 
             # get the k-vectors
-            kr = self.file.get('kr')
-            kz = self.file.get('kz')
-            mm = self.file.get('mode_mass')
+            kr = np.array(self.file.get('kr'))
+            kz = np.array(self.file.get('kz'))
+            om = np.array(self.file.get('omega'))
+            mm = np.array(self.file.get('mode_mass'))
 
             n_modes_r = np.shape(kr)[0]
             n_modes_z = np.shape(kz)[0]
@@ -238,7 +239,10 @@ class field_analysis:
             P_dc = self.file.get('p_dc')
             P_omega = self.file.get('p_omega')
 
-            P_z = (kz*P_dc + kr*P_omega)/(np.sqrt(kr*kr + kz*kz))
+            kzpdc = np.einsum('z, zr -> zr', kz, P_dc)
+            krpom = np.einsum('r, zr -> zr', kr, P_omega)
+
+            P_z = (kzpdc + krpom)/om
 
             R_range = np.arange(0., R, R/n_modes_r)
             Z_range = np.arange(0., L, L/n_modes_z)
@@ -274,9 +278,10 @@ class field_analysis:
             L = self.file.attrs['L']
 
             # get the k-vectors
-            kr = self.file.get('kr')
-            kz = self.file.get('kz')
-            mm = self.file.get('mode_mass')
+            kr = np.array(self.file.get('kr'))
+            kz = np.array(self.file.get('kz'))
+            om = np.array(self.file.get('omega'))
+            mm = np.array(self.file.get('mode_mass'))
 
             n_modes_r = np.shape(kr)[0]
             n_modes_z = np.shape(kz)[0]
@@ -284,7 +289,10 @@ class field_analysis:
             P_dc = self.file.get('p_dc')
             P_omega = self.file.get('p_omega')
 
-            P_r = (-kr*P_dc + kz*P_omega)/(np.sqrt(kr*kr + kz*kz))
+            krpdc = np.einsum('r, zr -> zr', kr, P_dc)
+            kzpom = np.einsum('z, zr -> zr', kz, P_omega)
+
+            P_r = (kzpom - krpdc)/om
 
             R_range = np.arange(0., R, R/n_modes_r)
             Z_range = np.arange(0., L, L/n_modes_z)
@@ -298,7 +306,7 @@ class field_analysis:
             the_j1 = j1(kr_cross_r)
             the_sin = sin(kz_cross_z)
 
-            ER = einsum('ik, klm, ilm, ik, ik->lm', P_r, the_j1, the_sin, mm)
+            ER = einsum('ik, klm, ilm, ik->lm', P_r, the_j1, the_sin, mm)
 
             return ER, RR, ZZ
 
