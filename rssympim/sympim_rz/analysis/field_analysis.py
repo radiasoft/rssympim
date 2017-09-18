@@ -235,7 +235,10 @@ class field_analysis:
             n_modes_r = np.shape(kr)[0]
             n_modes_z = np.shape(kz)[0]
 
-            mode_P = self.file.get('mode_p')
+            P_dc = self.file.get('p_dc')
+            P_omega = self.file.get('p_omega')
+
+            P_z = (kz*P_dc + kr*P_omega)/(np.sqrt(kr*kr + kz*kz))
 
             R_range = np.arange(0., R, R/n_modes_r)
             Z_range = np.arange(0., L, L/n_modes_z)
@@ -249,16 +252,7 @@ class field_analysis:
             the_j0 = j0(kr_cross_r)
             the_cos = cos(kz_cross_z)
 
-            mode_mass = np.ones((n_modes_z, n_modes_r))
-            zero_zeros = jn_zeros(0, n_modes_r)
-
-            for idx_r in range(0, n_modes_r):
-                for idx_z in range(0, n_modes_z):
-                    mode_mass[idx_z, idx_r] = np.sqrt(consts.c /
-                        (.25 * R * R * L * (j1(zero_zeros[idx_r]) ** 2) *
-                         (1 + (kz[idx_z] / kr[idx_r]) ** 2)))
-
-            EZ = einsum('ik, klm, ilm, ik->lm', mode_P, the_j0, the_cos, mode_mass)
+            EZ = einsum('ik, klm, ilm, ik->lm', P_z, the_j0, the_cos, mm)
 
             return EZ, RR, ZZ
 
@@ -275,17 +269,22 @@ class field_analysis:
         if self.file_name:
 
             # get the domain length and radius
+            # get the domain length and radius
             R = self.file.attrs['R']
             L = self.file.attrs['L']
 
             # get the k-vectors
             kr = self.file.get('kr')
             kz = self.file.get('kz')
+            mm = self.file.get('mode_mass')
 
             n_modes_r = np.shape(kr)[0]
             n_modes_z = np.shape(kz)[0]
 
-            mode_P = self.file.get('mode_p')
+            P_dc = self.file.get('p_dc')
+            P_omega = self.file.get('p_omega')
+
+            P_r = (-kr*P_dc + kz*P_omega)/(np.sqrt(kr*kr + kz*kz))
 
             R_range = np.arange(0., R, R/n_modes_r)
             Z_range = np.arange(0., L, L/n_modes_z)
@@ -298,22 +297,8 @@ class field_analysis:
             # generate a mesh grid
             the_j1 = j1(kr_cross_r)
             the_sin = sin(kz_cross_z)
-            radial_coeff = np.ones((n_modes_z, n_modes_r))
 
-            mode_mass = np.ones((n_modes_z, n_modes_r))
-            zero_zeros = jn_zeros(0, n_modes_r)
-
-            for idx_r in range(0, n_modes_r):
-                for idx_z in range(0, n_modes_z):
-                    mode_mass[idx_z, idx_r] = np.sqrt(consts.c /
-                        (.25 * R * R * L * (j1(zero_zeros[idx_r]) ** 2) *
-                         (1 + (kz[idx_z] / kr[idx_r]) ** 2)))
-
-            for idx_r in range(0, n_modes_r):
-                for idx_z in range(0, n_modes_z):
-                    radial_coeff[idx_z, idx_r] = kz[idx_z]/kr[idx_r]
-
-            ER = einsum('ik, klm, ilm, ik, ik->lm', mode_P, the_j1, the_sin, radial_coeff, mode_mass)
+            ER = einsum('ik, klm, ilm, ik, ik->lm', P_r, the_j1, the_sin, mm)
 
             return ER, RR, ZZ
 
