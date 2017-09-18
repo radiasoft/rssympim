@@ -10,6 +10,8 @@ from rssympim.constants import constants
 import numpy as np
 from matplotlib import pyplot as plt
 
+import time
+
 # species data
 charge = constants.electron_charge
 mass = constants.electron_mass
@@ -60,10 +62,13 @@ E = []
 t = []
 
 E0 = tot_energy
-n_steps = 60
+n_steps = 100
 step = 0
 
 dt0 = 2.*np.pi/np.amax(fld_data.omega)
+t_setup = 0.
+t_overhead = 0.
+t0 = time.time()
 
 while step < n_steps:
 
@@ -71,16 +76,24 @@ while step < n_steps:
     create_init_conds(ptcl_data, fld_data)
 
     # Span dt over decades
-    dt = dt0/((1.1)**step)
+    dt = dt0/((1.05)**step)
+
+
 
     # Create the new integrator w/ Yoshida coefficients
     x0 = -(2.**(1./3.)/(2.-2.**(1./3.)))
     x1 = (1./(2.-2.**(1./3.)))
 
+    t_oi = time.time()
+
     forward_integrator = integrator.integrator(x1*dt, fld_data)
     backward_integrator = integrator.integrator(x0*dt, fld_data)
 
+    t_of = time.time()
+    t_overhead += t_of-t_oi
+
     # Integrate a single step w/ 4th order
+
     forward_integrator.half_field_forward(fld_data)
     forward_integrator.single_step_ptcl(ptcl_data, fld_data)
     forward_integrator.half_field_forward(fld_data)
@@ -101,6 +114,10 @@ while step < n_steps:
 
     E.append(np.abs(tot_energy-E0)/np.abs(E0))
     t.append(dt)
+
+tf = time.time()
+
+print 'run time =', tf-t0 - t_overhead, 'secs'
 
 t = np.amax(fld_data.omega)*np.array(t)/(2.*np.pi)
 E = np.array(E)

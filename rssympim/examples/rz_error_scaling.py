@@ -10,6 +10,8 @@ from rssympim.constants import constants
 import numpy as np
 from matplotlib import pyplot as plt
 
+import time
+
 # species data
 charge = constants.electron_charge
 mass = constants.electron_mass
@@ -29,10 +31,10 @@ volume = np.pi*l_r*l_r*l_z
 n_electrons = n0*volume
 
 # Simulation parameters
-n_macro_ptcls = 101
+n_macro_ptcls = 1000
 macro_weight = n_electrons/n_macro_ptcls
-n_r_modes = 2
-n_z_modes = 5
+n_r_modes = 10
+n_z_modes = 10
 
 # Create simulation objects
 ptcl_data = particle_data.particle_data(n_macro_ptcls, charge, mass, macro_weight)
@@ -63,10 +65,12 @@ E0 = tot_energy
 
 print E0
 
-n_steps = 150
+n_steps = 100
 step = 0
 
 dt0 = 10*2*np.pi/np.amax(fld_data.omega)
+
+t0 = time.time()
 
 while step < n_steps:
 
@@ -92,6 +96,10 @@ while step < n_steps:
 
     E.append(np.abs(tot_energy-E0)/np.abs(E0))
     t.append(dt)
+
+tf = time.time()
+
+print 'run time =', tf-t0, 'secs'
 
 t = np.amax(fld_data.omega)*np.array(t)/(2.*np.pi)
 E = np.array(E)
