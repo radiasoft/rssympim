@@ -15,6 +15,8 @@ class particle_data:
         :param weight: number of particles per macroparticle
         """
 
+        self.np = n_particles
+
         self.r = np.zeros(n_particles)
         self.z = np.zeros(n_particles)
         self.pr = np.zeros(n_particles)
