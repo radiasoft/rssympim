@@ -8,6 +8,8 @@ from rssympim.sympim_rz.data import particle_data, field_data
 from rssympim.sympim_rz.integrators import integrator
 from rssympim.constants import constants
 import numpy as np
+import matplotlib as mpl
+mpl.use("TkAgg")
 from matplotlib import pyplot as plt
 
 import time
@@ -77,8 +79,6 @@ while step < n_steps:
 
     # Span dt over decades
     dt = dt0/((1.05)**step)
-
-
 
     # Create the new integrator w/ Yoshida coefficients
     x0 = -(2.**(1./3.)/(2.-2.**(1./3.)))

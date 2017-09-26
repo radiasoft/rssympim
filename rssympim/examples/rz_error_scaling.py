@@ -8,6 +8,9 @@ from rssympim.sympim_rz.data import particle_data, field_data
 from rssympim.sympim_rz.integrators import integrator
 from rssympim.constants import constants
 import numpy as np
+
+import matplotlib as mpl
+mpl.use("TkAgg")
 from matplotlib import pyplot as plt
 
 import time
