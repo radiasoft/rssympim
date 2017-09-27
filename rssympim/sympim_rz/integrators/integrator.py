@@ -54,6 +54,10 @@ class integrator:
     def second_order_step(self, ptcl_data, field_data):
         '''A comlpete step with second order integration in time'''
         
+        
+        #half step field forward
+        self.field_maps.half_advance_forward(field_data)
+        
         # always compute the new gamma_mc after the field map update
         ptcl_data.compute_gamma_mc(field_data)
 
@@ -79,7 +83,7 @@ class integrator:
         field_data.finalize_fields()
         
         #full step particle
-        self.single_step_ptcl(ptcl_data, field_data)
+        #self.single_step_ptcl(ptcl_data, field_data)
         
         #half step field
         self.field_maps.half_advance_forward(field_data)
