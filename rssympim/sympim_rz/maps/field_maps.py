@@ -2,6 +2,17 @@
 import numpy as np
 
 class field_maps:
+    """
+    Class for handling field updates and rotations
+        
+    Parameters
+    ----------
+    field_data: data.field_data
+        field data class object
+    _dt: float (second)
+        Step size for integration and motion  
+    
+    """
 
     def __init__(self, fld_data, _dt):
 
@@ -12,12 +23,11 @@ class field_maps:
         n_modes_r = np.shape(kr)[0]
         n_modes_z = np.shape(kz)[0]
 
-        self.dt = _dt
-
         omega = fld_data.omega
 
         M_omega = mode_mass*omega
 
+        self.dt = _dt
         self.phase_advance = omega*_dt
 
         self.rotation_matrices = np.zeros((n_modes_z, n_modes_r,2,2))
@@ -61,8 +71,11 @@ class field_maps:
     def advance_forward(self, field_data):
         """
         Advance the field data by a full time step.
-        :param field_data:
-        :return:
+        
+        Parameters
+        ----------
+        field_data: data.field_data
+            field data class object
         """
 
         field_data.omega_coords = np.einsum('ijkl, ijl -> ijk',
@@ -74,8 +87,11 @@ class field_maps:
     def half_advance_forward(self, field_data):
         """
         Advance the field data by a half time step forward -- for the beginning of a simulation
-        :param field_data:
-        :return:
+        
+        Parameters
+        ----------
+        field_data: data.field_data
+            field data class object
         """
 
         field_data.omega_coords = np.einsum('ijkl, ijl -> ijk',
@@ -87,8 +103,11 @@ class field_maps:
     def half_advance_back(self, field_data):
         """
         Advance the field data by a half time step backward -- for the end of a simulation
-        :param field_data:
-        :return:
+        
+        Parameters
+        ----------
+        field_data: data.field_data
+            field data class object
         """
 
         field_data.omega_coords = np.einsum('ijkl, ijl -> ijk',

@@ -1,5 +1,14 @@
 
 class ptcl_maps:
+    """
+    Class for handling particle motion and phase-space coordinate updates
+        
+    Parameters
+    ----------
+    _dt: float (second)
+        Step size for integration and motion  
+    
+    """
 
     def __init__(self, _dt):
 
@@ -10,8 +19,11 @@ class ptcl_maps:
     def drift_r(self, ptcl_data):
         """
         Particles drift in r for a full step
-        :param ptcl_data:
-        :return:
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
         """
 
         ptcl_data.r += (ptcl_data.pr / ptcl_data.gamma_mc) * self.dt
@@ -22,8 +34,11 @@ class ptcl_maps:
     def drift_z(self, ptcl_data):
         """
         Particles drift in z for a full step
-        :param ptcl_data:
-        :return:
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
         """
 
         ptcl_data.z += (ptcl_data.pz / ptcl_data.gamma_mc) * self.dt
@@ -32,8 +47,11 @@ class ptcl_maps:
     def angular_momentum(self, ptcl_data):
         """
         Particles get an angular momentum kick
-        :param ptcl_data:
-        :return:
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
         """
 
         ptcl_data.pr += self.dt * \
@@ -43,8 +61,11 @@ class ptcl_maps:
     def half_drift_r(self, ptcl_data, fld_data):
         """
         Particles drift in r for a half step
-        :param ptcl_data:
-        :return:
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
         """
 
         ptcl_data.r += (ptcl_data.pr / ptcl_data.gamma_mc) * self.halfdt
@@ -55,8 +76,11 @@ class ptcl_maps:
     def half_drift_z(self, ptcl_data):
         """
         Particles drift in z for a half step
-        :param ptcl_data:
-        :return:
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
         """
 
         ptcl_data.z += (ptcl_data.pz / ptcl_data.gamma_mc) * self.halfdt
@@ -65,8 +89,11 @@ class ptcl_maps:
     def half_angular_momentum(self, ptcl_data):
         """
         Particles get half an angular momentum kick
-        :param ptcl_data:
-        :return:
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
         """
 
         ptcl_data.pr += self.halfdt * \

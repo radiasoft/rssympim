@@ -4,14 +4,18 @@
 #
 
 class similarity_maps():
-
+    """Class for handling deposition of sources to fields and rotations of the particle coordinates"""
 
     def S_r(self, field_data, ptcl_data):
         """
         Compute the effects of the r similarity map on the fields and particles
-        :param field_data:
-        :param ptcl_data:
-        :return: nothing
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
+        field_data: data.field_data
+            field data class object
         """
 
         kick_z, kick_r, kick_Q0, kick_Qomega = \
@@ -27,11 +31,14 @@ class similarity_maps():
 
     def S_r_inverse(self, field_data, ptcl_data):
         """
-        Compute the effects of the r-inverse similarity map on the fields and
-        particles
-        :param field_data:
-        :param ptcl_data:
-        :return: nothing
+        Compute the effects of the r-inverse similarity map on the fields and particles
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
+        field_data: data.field_data
+            field data class object
         """
 
         kick_z, kick_r, kick_Q0, kick_Qomega = \
@@ -48,9 +55,13 @@ class similarity_maps():
     def S_z(self, field_data, ptcl_data):
         """
         Compute the effects of the z similarity map on the fields and particles
-        :param field_data:
-        :param ptcl_data:
-        :return: nothing
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
+        field_data: data.field_data
+            field data class object
         """
 
         kick_z, kick_r, kick_Q0, kick_Qomega = \
@@ -66,11 +77,14 @@ class similarity_maps():
 
     def S_z_inverse(self, field_data, ptcl_data):
         """
-        Compute the effects of the z-inverse similarity map on the fields and
-        particles
-        :param field_data:
-        :param ptcl_data:
-        :return: nothing
+        Compute the effects of the z-inverse similarity map on the fields and particles
+        
+        Parameters
+        ----------
+        ptcl_data : data.particle_data
+            particle data class object
+        field_data: data.field_data
+            field data class object
         """
 
         kick_z, kick_r, kick_Q0, kick_Qomega = \
