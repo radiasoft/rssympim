@@ -81,30 +81,40 @@ while step < n_steps:
     dt = dt0/((1.05)**step)
 
     # Create the new integrator w/ Yoshida coefficients
-    x0 = -(2.**(1./3.)/(2.-2.**(1./3.)))
-    x1 = (1./(2.-2.**(1./3.)))
+    #x0 = -(2.**(1./3.)/(2.-2.**(1./3.)))
+    #x1 = (1./(2.-2.**(1./3.)))
 
     t_oi = time.time()
 
-    forward_integrator = integrator.integrator(x1*dt, fld_data)
-    backward_integrator = integrator.integrator(x0*dt, fld_data)
+    #forward_integrator = integrator.integrator(x1*dt, fld_data)
+    #backward_integrator = integrator.integrator(x0*dt, fld_data)
+
+    my_integrator = integrator.integrator(dt, fld_data)
+    my_integrator.setup_fourth_order(fld_data)
 
     t_of = time.time()
     t_overhead += t_of-t_oi
 
-    # Integrate a single step w/ 4th order
+    
 
-    forward_integrator.half_field_forward(fld_data)
-    forward_integrator.single_step_ptcl(ptcl_data, fld_data)
-    forward_integrator.half_field_forward(fld_data)
+    t_of = time.time()
+    t_overhead += t_of-t_oi
 
-    backward_integrator.half_field_forward(fld_data)
-    backward_integrator.single_step_ptcl(ptcl_data, fld_data)
-    backward_integrator.half_field_forward(fld_data)
+    # Integrate a single step w/ 4th order using new function
+    
+    my_integrator.fourth_order_step(ptcl_data,fld_data)
 
-    forward_integrator.half_field_forward(fld_data)
-    forward_integrator.single_step_ptcl(ptcl_data, fld_data)
-    forward_integrator.half_field_forward(fld_data)
+    #forward_integrator.half_field_forward(fld_data)
+    #forward_integrator.single_step_ptcl(ptcl_data, fld_data)
+    #forward_integrator.half_field_forward(fld_data)
+
+    #backward_integrator.half_field_forward(fld_data)
+    #backward_integrator.single_step_ptcl(ptcl_data, fld_data)
+    #backward_integrator.half_field_forward(fld_data)
+
+    #forward_integrator.half_field_forward(fld_data)
+    #forward_integrator.single_step_ptcl(ptcl_data, fld_data)
+    #forward_integrator.half_field_forward(fld_data)
 
     particle_energies = ptcl_data.compute_ptcl_hamiltonian(fld_data)
     field_energies = fld_data.compute_energy()
