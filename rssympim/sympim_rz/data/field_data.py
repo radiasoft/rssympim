@@ -21,6 +21,25 @@ from scipy.special import j0, j1, jn_zeros
 # # #
 
 class field_data(object):
+    """
+    Class that stores the field data and can compute particle-field interactions
+     
+    Parameters
+    ----------
+    L: float (cm)
+        Length (z) of domain
+    
+    R: float (cm)
+        Radius of domain
+    
+    n_modes_z: int
+        Number of longitudinal modes to be computed
+    
+    n_modes_r: int
+        Number of radial modes to be computed
+    
+    """
+    
 
     def __init__(self, L, R, n_modes_z, n_modes_r):
 
@@ -107,8 +126,19 @@ class field_data(object):
         """
         Use Romberg integration to approximate the convolution integral
         with j0 to fourth order in the particle size
-        :param _x:
-        :return:
+        
+        Parameters
+        ----------
+        _x: float (cm)
+            a 2darray of macroparticle phases k_x*x, of shape (n_modes,particles.np)
+        
+        delta_x: float(cm)
+            macroparticle width - 1darray of reals
+        
+        Returns
+        -------
+        A 2darray of reals, of shape (n_modes, particles.np)
+        
         """
 
         return (j0(_x - 0.5 * delta_x) +
@@ -120,8 +150,19 @@ class field_data(object):
         """
         Use Romberg integration to approximate the convolution integral
         with j1 to fourth order in the particle size
-        :param _x:
-        :return:
+        
+        Parameters
+        ----------
+        _x: float (cm)
+            a 2darray of macroparticle phases k_x*x, of shape (n_modes,particles.np)
+        
+        delta_x: float(cm)
+            macroparticle width - 1darray of reals
+        
+        Returns
+        -------
+        A 2darray of reals, of shape (n_modes, particles.np)
+        
         """
 
         return (j1(_x-0.5*delta_x) +
@@ -130,6 +171,24 @@ class field_data(object):
 
 
     def int_convolved_j1(self, _x, delta_x):
+        """
+        Analytic integral of the convolved_j1 Romberg approximation
+        with j1 to fourth order in the particle size
+        
+        Parameters
+        ----------
+        _x: float (cm)
+            a 2darray of macroparticle phases k_x*x, of shape (n_modes,particles.np)
+        
+        delta_x: float(cm)
+            macroparticle width - 1darray of reals
+        
+        Returns
+        -------
+        A 2darray of reals, of shape (n_modes, particles.np)
+        
+        """
+
 
         return -(j0(_x-0.5*delta_x) +
                 4.*j0(_x) +
@@ -139,11 +198,24 @@ class field_data(object):
     def compute_S_r_kick(self, r, z, qOc):
 
         """
-                Evaluate Ar for a set of particles
-                :param _r: radial coordinates
-                :param _z: longitudinal coordinates
-                :return: Ar, a numpy array
-                """
+        Evaluates the radial kicks for a set of particles
+        
+        Parameters
+        ----------
+        r: float (cm)
+            a 1darray of macroparticle coordinates, of shape (particles.np,)
+        
+        z: float(cm)
+            a 1darray of macroparticle coordinates, of shape (particles.np,)
+        
+         qOc: float(cm)
+            a 1darray of macroparticle charge:mass ratios, of shape (particles.np,)
+        
+        Returns
+        -------
+        A length-4 list of 1darrays, each of shape (particles.np,)
+
+        """
 
         kz_cross_z = einsum('z, p -> zp', self.kz, z)
         kr_cross_r = einsum('r, p -> rp', self.kr, r)
@@ -172,10 +244,23 @@ class field_data(object):
 
     def compute_Ar(self, r, z, qOc):
         """
-        Evaluate Ar for a set of particles
-        :param _r: radial coordinates
-        :param _z: longitudinal coordinates
-        :return: Ar, a numpy array
+        Evaluates the vector potential component Ar for a set of particles
+        
+        Parameters
+        ----------
+        r: float (cm)
+            a 1darray of macroparticle coordinates, of shape (particles.np,)
+        
+        z: float(cm)
+            a 1darray of macroparticle coordinates, of shape (particles.np,)
+        
+         qOc: float(cm)
+            a 1darray of macroparticle charge:mass ratios, of shape (particles.np,)
+        
+        Returns
+        -------
+        A 1darray of shape (particles.np,)
+
         """
 
         kz_cross_z = einsum('z, p -> zp', self.kz, z)
@@ -196,10 +281,23 @@ class field_data(object):
     def compute_S_z_kick(self, r, z, qOc):
 
         """
-        Evaluate the kicks for a set of particles
-        :param _r: radial coordinates
-        :param _z: longitudinal coordinates
-        :return: Ar, a numpy array
+        Evaluates the longitudinal kicks for a set of particles
+        
+        Parameters
+        ----------
+        r: float (cm)
+            a 1darray of macroparticle coordinates, of shape (particles.np,)
+        
+        z: float(cm)
+            a 1darray of macroparticle coordinates, of shape (particles.np,)
+        
+         qOc: float(cm)
+            a 1darray of macroparticle charge:mass ratios, of shape (particles.np,)
+        
+        Returns
+        -------
+        A length-4 list of 1darrays, each of shape (particles.np,)
+
         """
 
         kz_cross_z = einsum('z, p -> zp', self.kz, z)
@@ -231,10 +329,23 @@ class field_data(object):
 
     def compute_Az(self, r, z, qOc):
         """
-        Evaluate Az for a set of particles
-        :param _r: radial coordinates
-        :param _z: longitudinal coordinates
-        :return: Az, a numpy array
+        Evaluates the vector potential component Az for a set of particles
+        
+        Parameters
+        ----------
+        r: float (cm)
+            a 1darray of macroparticle coordinates, of shape (particles.np,)
+        
+        z: float(cm)
+            a 1darray of macroparticle coordinates, of shape (particles.np,)
+        
+         qOc: float(cm)
+            a 1darray of macroparticle charge:mass ratios, of shape (particles.np,)
+        
+        Returns
+        -------
+        A 1darray of shape (particles.np,)
+
         """
 
         kr_cross_r = einsum('r, p -> rp', self.kr, r)
@@ -253,10 +364,8 @@ class field_data(object):
 
 
     def finalize_fields(self):
-        """
-        MPI communication on the fields at the end of the update sequence
-        :return:
-        """
+        """MPI communication on the fields at the end of the update sequence"""
+        
         # Commented out until the MPI implementation is ready
         #self.comm.allreduce(self.delta_P, op=MPI.SUM, root=0)
         self.dc_coords[:,:,0]    += self.delta_P_dc[:,:]
@@ -269,7 +378,10 @@ class field_data(object):
     def compute_energy(self):
         """
         Computes the energy stored in each mode
-        :return: numpy array with the field energy of each mode
+        
+        Returns
+        -------
+        A 2darray of floats with shape (n_modes_z, n_modes_r)
         """
 
         # radiation energy
@@ -289,10 +401,7 @@ class field_data(object):
 
 
     def apply_moving_window(self):
-        """
-        Shift the fields onto a new basis a distance d to the right
-        :return:
-        """
+        """Shift the fields onto a new basis a distance d to the right"""
 
         # shift the r coordinates
         self.dc_coords = np.einsum('zjn, rj -> zrn', self.dc_coords, self.r_shift_matrix)
