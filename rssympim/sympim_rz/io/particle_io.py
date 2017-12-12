@@ -13,7 +13,8 @@ class field_io:
 
         self.ptcl_name = particle_name
 
-        self.rank = MPI.COMM_WORLD.rank
+        self.comm = MPI.COMM_WORLD
+        self.rank = self.comm.rank
 
     def dump_ptcls(self, ptcl_class, step_number):
 

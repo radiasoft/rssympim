@@ -2,7 +2,7 @@ import numpy as np
 from numpy import sin, cos, einsum
 from scipy.special import j0, j1, jn_zeros
 # Commented out until MPI implementation is ready
-#from mpi4py import MPI
+from mpi4py import MPI as mpi
 
 # # #
 #
@@ -50,9 +50,10 @@ class field_data(object):
         self.domain_R = R
 
         self.kr = jn_zeros(0, self.n_modes_r)/R
+        self.kz = np.pi * np.arange(1, self.n_modes_z + 1) / L
 
         self.oneOkr = 1./self.kr
-        self.kz = np.pi * np.arange(1, self.n_modes_z + 1) / L
+        self.oneOkz = 1./self.kz
 
         # Needed for the normalization
         zero_zeros = jn_zeros(0, self.n_modes_r)
@@ -70,6 +71,12 @@ class field_data(object):
                 self.mode_mass[idx_z, idx_r] = .5*R*R*L*(j1(zero_zeros[idx_r]))**2/4.
 
 
+        self.oneOomega = 1./self.omega
+
+        self.kzOomega = einsum('z, zr -> zr', self.kz, self.oneOomega)
+        self.krOomega = einsum('r, zr -> zr', self.kr, self.oneOomega)
+
+
         self.delta_P_dc = np.zeros((self.n_modes_z,self.n_modes_r))
         self.delta_P_omega = np.zeros((self.n_modes_z,self.n_modes_r))
 
@@ -82,44 +89,8 @@ class field_data(object):
 
         self.shape_function_z = np.exp(-0.5*(self.kz*self.ptcl_width_z)**2)
 
-        # These are the parameters required for the moving window,
-        # which when applied moves the fields along by the shortest wavelength resolved.
-        # For a spectral code, this is a projection from one cylindrical basis to another
-        # translated by mw_d -- convolution integrals and the like.
-        mw_d = np.pi/np.max(self.kz)
-        eikL = np.exp(1.j*self.kz*self.domain_L)
-        eikd = np.exp(1.j*self.kz*mw_d)
-
-        # Build a matrix for this stuff
-        matrix_eikd_sum = np.einsum('i,j -> ij', eikd, eikd)
-        matrix_eikL_sum = np.einsum('i,j -> ij', eikL, eikL)
-
-        matrix_eikd_diff = np.einsum('i,j -> ij', eikd, 1. / eikd)
-        matrix_eikL_diff = np.einsum('i,j -> ij', eikL, 1. / eikL)
-
-        Ki, Kj = np.meshgrid(self.kz, self.kz)
-
-        oneOplus = 1. / (1.j * (Ki + Kj))
-        # This will have pythonic 'inf' along the diagonal, and will be handled later
-        oneOminus = 1. / (1.j * (Ki - Kj))
-
-        # Let's create the two individual terms that appear in the moving window
-        sum_matrix  = np.einsum('ij, ij->ij', (matrix_eikL_sum-matrix_eikd_sum), oneOplus)
-        diff_matrix = np.einsum('ij, ij->ij', (matrix_eikL_diff-matrix_eikd_diff), oneOminus)
-
-        # diff_matrix has pythonic 'nan' along the diagonal since 0.*float('inf') = nan, but
-        # L'Hopital's Rule says that these elements are actually zero
-        diff_matrix[np.isnan(diff_matrix)] = 0.
-
-        # Both arrays have a phase multiplier
-
-        sum_matrix = np.einsum('ij, j -> ij', sum_matrix, 1./eikd)
-        diff_matrix = np.einsum('ij, j -> ij', diff_matrix, 1./eikd)
-
-        # Compute the final matrices that tell you how the field amplitudes change
-        # when projected on a new basis shifted d to the right/
-        self.r_shift_matrix = 0.5*np.real(sum_matrix + diff_matrix)
-        self.z_shift_matrix = -0.5*np.real(sum_matrix - diff_matrix)
+        # Create the mpi communicator
+        self.comm = mpi.COMM_WORLD
 
 
     def convolved_j0(self, _x, delta_x):
@@ -230,14 +201,14 @@ class field_data(object):
 
         # Calculate Q_r for each mode
         modeQr = (np.einsum('r, zr -> zr', -self.kr, self.dc_coords[:, :, 1]) + \
-                  np.einsum('z, zr -> zr', self.kz, self.omega_coords[:, :, 1])) / self.omega
+                  np.einsum('z, zr -> zr', self.kz, self.omega_coords[:, :, 1])) * self.oneOomega
 
         kick_z = einsum('zr, rp, zp -> p', modeQr, int_convolved_j1, d_convolved_sin_dz)*qOc
         kick_r = einsum('zr, rp, zp -> p', modeQr, convolved_j1, convolved_sin) * qOc
         dFrdQ = einsum('rp, zp, p -> zr', int_convolved_j1, convolved_sin, qOc)
 
-        kick_Q0     = dFrdQ*einsum('r, zr -> zr', -self.kr, 1./self.omega)
-        kick_Qomega = dFrdQ*einsum('z, zr -> zr', self.kz, 1./self.omega)
+        kick_Q0     = -dFrdQ*self.krOomega
+        kick_Qomega = dFrdQ*self.kzOomega
 
         return kick_z, kick_r, kick_Q0, kick_Qomega
 
@@ -271,7 +242,7 @@ class field_data(object):
         convolved_sin = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z)
 
         modeQr = (np.einsum('r, zr -> zr', -self.kr, self.dc_coords[:,:,1]) +\
-                    np.einsum('z, zr -> zr', self.kz, self.omega_coords[:,:,1]))/self.omega
+                    np.einsum('z, zr -> zr', self.kz, self.omega_coords[:,:,1])) * self.oneOomega
 
         Ar = einsum('zr, rp, zp -> p', modeQr, convolved_j1, convolved_sin)*qOc
 
@@ -309,19 +280,19 @@ class field_data(object):
         convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
         convolved_cos = einsum('zp, z -> zp', cos(kz_cross_z), self.shape_function_z)
         d_convolved_j0_dr = einsum('rp, r -> rp', -self.convolved_j1(kr_cross_r, delta_u), self.kr)
-        int_convolved_cos_dz = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z/self.kz)
+        int_convolved_cos_dz = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z*self.oneOkz)
 
         # Calculate Q_z for each mode
         modeQz = (np.einsum('z, zr -> zr', self.kz, self.dc_coords[:,:,1]) +\
-                    np.einsum('r, zr -> zr', self.kr, self.omega_coords[:,:,1]))/self.omega
+                    np.einsum('r, zr -> zr', self.kr, self.omega_coords[:,:,1])) * self.oneOomega
 
         kick_z = einsum('zr, rp, zp -> p', modeQz, convolved_j0, convolved_cos)*qOc
         kick_r = einsum('zr, rp, zp -> p', modeQz, d_convolved_j0_dr, int_convolved_cos_dz)*qOc
 
         dFzdQ = einsum('rp, zp, p -> zr', convolved_j0, int_convolved_cos_dz, qOc)
 
-        kick_Q0     = dFzdQ*einsum('z, zr -> zr', self.kz, 1./self.omega)
-        kick_Qomega = dFzdQ*einsum('r, zr -> zr', self.kr, 1./self.omega)
+        kick_Q0     = dFzdQ*self.kzOomega
+        kick_Qomega = dFzdQ*self.krOomega
 
 
         return kick_z, kick_r, kick_Q0, kick_Qomega
@@ -356,7 +327,7 @@ class field_data(object):
         convolved_cos = einsum('zp, z -> zp', cos(kz_cross_z), self.shape_function_z)
 
         modeQz = (np.einsum('z, zr -> zr', self.kz, self.dc_coords[:,:,1]) +\
-                    np.einsum('r, zr -> zr', self.kr, self.omega_coords[:,:,1]))/self.omega
+                    np.einsum('r, zr -> zr', self.kr, self.omega_coords[:,:,1])) * self.oneOomega
 
         Az = einsum('zr, rp, zp -> p', modeQz, convolved_j0, convolved_cos)*qOc
 
@@ -367,7 +338,9 @@ class field_data(object):
         """MPI communication on the fields at the end of the update sequence"""
         
         # Commented out until the MPI implementation is ready
-        #self.comm.allreduce(self.delta_P, op=MPI.SUM, root=0)
+        self.comm.allreduce(self.delta_P_dc, op=mpi.SUM)
+        self.comm.allreduce(self.delta_P_omega, op=mpi.SUM)
+
         self.dc_coords[:,:,0]    += self.delta_P_dc[:,:]
         self.omega_coords[:,:,0] += self.delta_P_omega[:,:]
 
@@ -388,7 +361,7 @@ class field_data(object):
         Qsqrd = self.omega_coords[:,:,1]*self.omega_coords[:,:,1]
         Psqrd = self.omega_coords[:,:,0]*self.omega_coords[:,:,0]
 
-        e_rad = (Psqrd/self.mode_mass + (self.mode_mass*self.omega**2)*Qsqrd)/2
+        e_rad = (Psqrd/self.mode_mass + (self.mode_mass*self.omega**2)*Qsqrd)*.5
 
         # space charge energy
         Dsqrd = self.dc_coords[:,:,0]*self.dc_coords[:,:,0]
