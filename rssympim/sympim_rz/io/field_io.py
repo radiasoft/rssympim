@@ -6,14 +6,18 @@ Author: Stephen Webb
 
 import h5py
 from mpi4py import MPI
+import numpy as np
 
 class field_io:
 
-    def __init__(self, field_name, field_class):
+    def __init__(self, field_name):
 
         self.field_name = field_name
 
         self.rank = MPI.COMM_WORLD.rank
+
+
+    def dump_field(self, field_class, step_number):
 
         # Copy over the information required to re-assemble the fields
 
@@ -21,9 +25,6 @@ class field_io:
         self.kz = field_class.kz
         self.mode_mass = field_class.mode_mass
         self.omega = field_class.omega
-
-
-    def dump_field(self, field_class, step_number):
 
         # Field data is global, so only one process needs to write its data
         if self.rank == 0:
@@ -65,3 +66,23 @@ class field_io:
             )
 
             dump_file.close()
+
+
+    def read_field(self, file_name):
+
+        read_file = h5py.File(file_name, 'r',
+                              driver=mpio, comm=self.comm)
+
+        n_modes_r = np.shape(read_file.get('kr'))[0]
+        n_modes_z = np.shape(read_file.get('kz'))[0]
+
+        R = read_file.attrs['R']
+        L = read_file.attrs['L']
+
+        P_omega = np.array(read_file.get('p_omega'))
+        Q_omega = np.array(read_file.get('q_omega'))
+
+        P_dc = np.array(read_file.get('p_dc'))
+        Q_dc = np.array(read_file.get('q_dc'))
+
+        return n_modes_z, n_modes_r, L, R, P_omega, Q_omega, P_dc, Q_dc
