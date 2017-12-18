@@ -128,7 +128,7 @@ def vary_rz_modes(mode_pair, PD, ns=1e2):
     # create fields, particles, integrator
     particles = make_particles(PD)
     fields = make_fields(PD)
-    my_integrator = integrator.integrator(PD['dt'], fields.omega)
+    my_integrator = integrator.integrator(PD['dt'], fields)
 
     step = 0
 
@@ -136,7 +136,8 @@ def vary_rz_modes(mode_pair, PD, ns=1e2):
     
     t0 = time.time()
     while step < num_steps:
-        my_integrator.single_step(particles,fields)
+        my_integrator.single_step_fields(fields)
+        my_integrator.single_step_ptcl(particles,fields)
         
         step = step + 1
         
@@ -162,7 +163,7 @@ bothvs = []
 for rv in r_mode_range:
     for zv in z_mode_range:
         mode_pair = np.asarray([rv,zv]) #mode pair should be [n_r,n_z]
-        speed = vary_rz_modes(mode_pair,_PD)
+        speed = vary_rz_modes(mode_pair,_PD, 25)
         rvs.append(rv)
         zvs.append(zv)
         times.append(speed)
