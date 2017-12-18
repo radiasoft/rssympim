@@ -38,6 +38,8 @@ from rssympim.sympim_rz.io import field_io, particle_io
 
 from mpi4py import MPI as mpi
 
+import time
+
 ###
 #
 # Specify the bunch parameters. Assumes a parabolic distribution
@@ -78,7 +80,7 @@ sigma_z = 1.e-3 # cm
 n0 = 1.e17 # cm^-3
 k_p = np.sqrt(4*np.pi*n0 *
                   consts.electron_charge*consts.electron_charge /
-                  (consts.electron_mass*consts.c))
+                  consts.electron_mass)/consts.c
 
 plasma_temperature = 1000.*consts.k_boltzmann
 
@@ -95,11 +97,11 @@ mass = consts.electron_mass
 beta_beam = 1. # beam v_z/speed of light
 domain_r = 4 # 2.*np.pi/k_p
 domain_l = 5 # 2.*np.pi/k_p
-steps_per_plasma_period = 30
+steps_per_plasma_period = 10
 
-r_modes_per_kp = 10
-z_modes_per_kp = 10
-num_macro_per_mode = 10
+r_modes_per_kp = 8
+z_modes_per_kp = 8
+num_macro_per_mode = 8
 
 #--------------------------------------------------------------------
 #
@@ -191,6 +193,9 @@ ptcl_data.pr  = v_r * ptcl_data.m
 #
 
 sim_len = 2.*z_beam + length
+
+print 'z_beam', z_beam
+print 'length', length
 nsteps = int(sim_len/dtau)
 
 if rank == 0:
@@ -211,7 +216,7 @@ beam_pos = -2.*z_beam + step_num * dtau
 
 modified_ptcl_update_sequence = \
     beam_integrator(r_beam, z_beam, n_beam, dtau, fld_data)
-
+t0 = time.time()
 while beam_pos < length:
 
     # add field maps
@@ -223,7 +228,7 @@ while beam_pos < length:
 
     if rank == 0:
         if step_num%100 == 0:
-            print 'completing step', step_num
+            print 'completing step', step_num, 'in', time.time() - t0, 'sec'
 
     step_num += 1
 
