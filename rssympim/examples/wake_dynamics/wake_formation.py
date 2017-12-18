@@ -210,7 +210,7 @@ step_num = 0
 beam_pos = -2.*z_beam + step_num * dtau
 
 modified_ptcl_update_sequence = \
-    beam_integrator.beam_integrator(r_beam, z_beam, n_beam, dtau, fld_data)
+    beam_integrator(r_beam, z_beam, n_beam, dtau, fld_data)
 
 while beam_pos < length:
 
