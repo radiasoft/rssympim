@@ -26,11 +26,18 @@ class beam_integrator:
 
         self.dt = dt
 
-        self.kick_parameter = 4.*np.pi*consts.electron_charge*beam_N
+        self.kick_parameter = -4.*np.pi*consts.electron_charge*beam_N
 
         self.ptcl_maps = ptcl_maps.ptcl_maps(dt)
         self.fld_maps  = field_maps.field_maps(fld_data, dt)
         self.sim_maps  = similarity_maps.similarity_maps()
+
+
+    def update(self, ptcl_data, fld_data, beam_pos):
+
+        self.fld_maps.half_advance_forward(fld_data)
+        self.update_ptcls(ptcl_data, fld_data, beam_pos)
+        self.fld_maps.half_advance_forward(fld_data)
 
 
     def update_ptcls(self, ptcl_data, fld_data, beam_pos):
@@ -64,12 +71,6 @@ class beam_integrator:
         # Add the delta-P to each mode
         fld_data.finalize_fields()
 
-
-    def update(self, ptcl_data, fld_data, beam_pos):
-
-        self.fld_maps.half_advance_forward(fld_data)
-        self.update_ptcls(ptcl_data, fld_data, beam_pos)
-        self.fld_maps.half_advance_forward(fld_data)
 
     ###
     #
@@ -106,16 +107,15 @@ class beam_integrator:
                                  (1 - (ptcl_data.z[ptcls_in_beam] - beam_pos) ** 2 / self.z_beam ** 2)
         kick_pr[ptcls_out_beam] = -self.kick_parameter * \
                                   (.5 - .125) * self.r_beam ** 2 / ptcl_data.r[ptcls_out_beam] * \
-                                  (1 - (ptcl_data.z[ptcls_in_beam] - beam_pos) ** 2 / self.z_beam ** 2)
+                                  (1 - (ptcl_data.z[ptcls_out_beam] - beam_pos) ** 2 / self.z_beam ** 2)
 
         kick_pz[ptcls_in_beam] = -self.kick_parameter * \
                                  (.5 - .125 * ptcl_data.r[ptcls_in_beam] ** 2 / self.r_beam ** 2) * ptcl_data.r[
                                                                                                         ptcls_in_beam] ** 2 * \
                                  (-(ptcl_data.z[ptcls_in_beam] - beam_pos) / self.z_beam ** 2)
         kick_pz[ptcls_out_beam] = -self.kick_parameter * \
-                                  (.5 - .125) * self.r_beam ** 2 * np.log(
-            ptcl_data.r[ptcls_out_beam] / self.r_beam) * \
-                                  (-(ptcl_data.z[ptcls_in_beam] - beam_pos) / self.z_beam ** 2)
+                                  (.5 - .125) * self.r_beam ** 2 * np.log(ptcl_data.r[ptcls_out_beam] / self.r_beam) * \
+                                  (-(ptcl_data.z[ptcls_out_beam] - beam_pos) / self.z_beam ** 2)
 
         kick_pz *= ptcl_data.qOc * dtau
         kick_pr *= ptcl_data.qOc * dtau
@@ -147,7 +147,7 @@ class beam_integrator:
                                  (1 - (ptcl_data.z[ptcls_in_beam] - beam_pos) ** 2 / self.z_beam ** 2)
         kick_pr[ptcls_out_beam] = -self.kick_parameter * \
                                   (.5 - .125) * self.r_beam ** 2 / ptcl_data.r[ptcls_out_beam] * \
-                                  (1 - (ptcl_data.z[ptcls_in_beam] - beam_pos) ** 2 / self.z_beam ** 2)
+                                  (1 - (ptcl_data.z[ptcls_out_beam] - beam_pos) ** 2 / self.z_beam ** 2)
 
         kick_pz[ptcls_in_beam] = -self.kick_parameter * \
                                  (.5 - .125 * ptcl_data.r[ptcls_in_beam] ** 2 / self.r_beam ** 2) * ptcl_data.r[
@@ -155,7 +155,7 @@ class beam_integrator:
                                  (-(ptcl_data.z[ptcls_in_beam] - beam_pos) / self.z_beam ** 2)
         kick_pz[ptcls_out_beam] = -self.kick_parameter * \
                                   (.5 - .125) * self.r_beam ** 2 * np.log(ptcl_data.r[ptcls_out_beam] / self.r_beam) * \
-                                  (-(ptcl_data.z[ptcls_in_beam] - beam_pos) /self.z_beam ** 2)
+                                  (-(ptcl_data.z[ptcls_out_beam] - beam_pos) /self.z_beam ** 2)
         kick_pz *= ptcl_data.qOc
         kick_pr *= ptcl_data.qOc
 
@@ -186,7 +186,7 @@ class beam_integrator:
                                  (1 - (ptcl_data.z[ptcls_in_beam] - beam_pos) ** 2 / self.z_beam ** 2)
         kick_pr[ptcls_out_beam] = -self.kick_parameter * \
                                   (.5 - .125) * self.r_beam ** 2 / ptcl_data.r[ptcls_out_beam] * \
-                                  (1 - (ptcl_data.z[ptcls_in_beam] - beam_pos) ** 2 / self.z_beam ** 2)
+                                  (1 - (ptcl_data.z[ptcls_out_beam] - beam_pos) ** 2 / self.z_beam ** 2)
 
         kick_pz[ptcls_in_beam] = -self.kick_parameter * \
                                  (.5 - .125 * ptcl_data.r[ptcls_in_beam] ** 2 / self.r_beam ** 2) * ptcl_data.r[
@@ -194,7 +194,7 @@ class beam_integrator:
                                  (-(ptcl_data.z[ptcls_in_beam] - beam_pos) / self.z_beam ** 2)
         kick_pz[ptcls_out_beam] = -self.kick_parameter * \
                                   (.5 - .125) * self.r_beam ** 2 * np.log(ptcl_data.r[ptcls_out_beam] / self.r_beam) * \
-                                  (-(ptcl_data.z[ptcls_in_beam] - beam_pos) /self.z_beam ** 2)
+                                  (-(ptcl_data.z[ptcls_out_beam] - beam_pos) /self.z_beam ** 2)
 
         kick_pz *= ptcl_data.qOc
         kick_pr *= ptcl_data.qOc

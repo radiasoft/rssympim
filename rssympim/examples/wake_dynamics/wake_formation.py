@@ -39,6 +39,7 @@ from rssympim.sympim_rz.io import field_io, particle_io
 from mpi4py import MPI as mpi
 
 import time
+from matplotlib import pyplot as plt
 
 ###
 #
@@ -82,7 +83,8 @@ k_p = np.sqrt(4*np.pi*n0 *
                   consts.electron_charge*consts.electron_charge /
                   consts.electron_mass)/consts.c
 
-plasma_temperature = 1000.*consts.k_boltzmann
+
+plasma_temperature = 10. # Kelvins
 
 # We are simulating electrons
 charge = consts.electron_charge
@@ -95,9 +97,9 @@ mass = consts.electron_mass
 # Run time considerations
 
 beta_beam = 1. # beam v_z/speed of light
-domain_r = 4 # 2.*np.pi/k_p
+domain_r = 3 # 2.*np.pi/k_p
 domain_l = 5 # 2.*np.pi/k_p
-steps_per_plasma_period = 10
+steps_per_plasma_period = 30
 
 r_modes_per_kp = 8
 z_modes_per_kp = 8
@@ -119,7 +121,9 @@ rank = comm.rank
 
 r_beam = np.sqrt(3)*sigma_r
 z_beam = np.sqrt(5)*sigma_z
-n_beam = N_beam*1.5*r_beam*r_beam*z_beam/np.pi
+
+# Normalization to the volume integral of the beam
+n_beam = N_beam/(4.*r_beam*r_beam*z_beam*np.pi/3.)
 
 # Domain parameters
 
@@ -157,13 +161,13 @@ ptcl_data = particle_data.particle_data(n_ptcls_per_core,
 # Initial conditions
 
 # uniform particle distribution in x, y, z
-x = 2.*radius*np.random.rand(n_ptcls_per_core)-radius
-y = 2.*radius*np.random.rand(n_ptcls_per_core)-radius
+x = radius*np.random.rand(n_ptcls_per_core)
+y = radius*np.random.rand(n_ptcls_per_core)
 r = np.sqrt(x*x + y*y)
 z = length*np.random.rand(n_ptcls_per_core)
 
 # Use colon notation to highlight bugs in counting
-ptcl_data.r[:] = r[:]
+ptcl_data.r[:] = x[:]
 ptcl_data.z[:] = z[:]
 
 macro_volume = np.sum(ptcl_data.r)
@@ -176,9 +180,9 @@ ptcl_data.m   *= scale_factor
 ptcl_data.mc  *= scale_factor
 
 # Generate a non-relativistic thermal distribution
-v_x = np.random.normal(0., plasma_temperature/(2*consts.electron_mass), n_ptcls_per_core)
-v_y = np.random.normal(0., plasma_temperature/(2*consts.electron_mass), n_ptcls_per_core)
-v_z = np.random.normal(0., plasma_temperature/(2*consts.electron_mass), n_ptcls_per_core)
+v_x = np.random.normal(0., consts.k_boltzmann*plasma_temperature/(2*ptcl_data.m), n_ptcls_per_core)
+v_y = np.random.normal(0., consts.k_boltzmann*plasma_temperature/(2*ptcl_data.m), n_ptcls_per_core)
+v_z = np.random.normal(0., consts.k_boltzmann*plasma_temperature/(2*ptcl_data.m), n_ptcls_per_core)
 
 # pretend the r-axis is aligned to the x-axis for simplicity
 ell = x*v_y
@@ -208,6 +212,8 @@ if rank == 0:
     print ' nsteps       ', nsteps
     print ' macroptcls   ', n_macro_ptcls
     print ' ptcls/core   ', n_ptcls_per_core
+    print ' n modes, r   ', n_modes_r
+    print ' n modes, z   ', n_modes_z
 
 step_num = 0
 
@@ -217,6 +223,7 @@ beam_pos = -2.*z_beam + step_num * dtau
 modified_ptcl_update_sequence = \
     beam_integrator(r_beam, z_beam, n_beam, dtau, fld_data)
 t0 = time.time()
+
 while beam_pos < length:
 
     # add field maps
@@ -227,15 +234,37 @@ while beam_pos < length:
     beam_pos += beta_beam*dtau
 
     if rank == 0:
-        if step_num%100 == 0:
+        if step_num%10 == 0:
             print 'completing step', step_num, 'in', time.time() - t0, 'sec'
 
     step_num += 1
 
 # Dump the particles and fields to set up an initial condition for the next simulation
 
-field_dumper = field_io.field_io('wake_flds', fld_data)
-ptcl_dumper = particle_io.particle_io('wake_ptcls', ptcl_data)
+plt.scatter(ptcl_data.z, ptcl_data.r, s=1)
+plt.xlabel('z')
+plt.ylabel('r')
+
+plt.show()
+plt.clf()
+
+plt.scatter(ptcl_data.r, ptcl_data.pr/ptcl_data.mc, s=1)
+plt.xlabel('r')
+plt.ylabel('pr')
+
+plt.show()
+plt.clf()
+
+plt.scatter(ptcl_data.z, ptcl_data.pz/ptcl_data.mc, s=1)
+plt.xlabel('z')
+plt.ylabel('pz')
+
+plt.show()
+plt.clf()
+
+field_dumper = field_io.field_io('wake_flds')
+ptcl_dumper = particle_io.particle_io('wake_ptcls')
 
 field_dumper.dump_field(fld_data, 0)
 ptcl_dumper.dump_ptcls(ptcl_data, 0)
+
