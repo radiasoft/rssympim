@@ -68,8 +68,10 @@ class field_data(object):
                 self.omega[idx_z,idx_r]= \
                     np.sqrt(self.kr[idx_r]**2 +self.kz[idx_z]**2)
                 # Integral of cos^2(k_z z)*J_z(k_r r)^2 over the domain volume
-                self.mode_mass[idx_z, idx_r] = .5*R*R*L*(j1(zero_zeros[idx_r]))**2/4.
+                self.mode_mass[idx_z, idx_r] = R*R*L*(j1(zero_zeros[idx_r]))**2/(8.)
 
+        self.omegaOtwokz = 0.5 * np.einsum('z, zr -> zr', 1. / self.kz, self.omega)
+        self.omegaOtwokr = 0.5 * np.einsum('r, zr -> zr', 1. / self.kr, self.omega)
 
         self.oneOomega = 1./self.omega
 
@@ -200,15 +202,14 @@ class field_data(object):
         d_convolved_sin_dz = einsum('zp, z -> zp', cos(kz_cross_z), self.kz*self.shape_function_z)
 
         # Calculate Q_r for each mode
-        modeQr = (np.einsum('r, zr -> zr', -self.kr, self.dc_coords[:, :, 1]) + \
-                  np.einsum('z, zr -> zr', self.kz, self.omega_coords[:, :, 1])) * self.oneOomega
+        modeQr = self.omegaOtwokz * (self.dc_coords[:,:,1] - self.omega_coords[:,:,1])
 
         kick_z = einsum('zr, rp, zp -> p', modeQr, int_convolved_j1, d_convolved_sin_dz)*qOc
         kick_r = einsum('zr, rp, zp -> p', modeQr, convolved_j1, convolved_sin) * qOc
         dFrdQ = einsum('rp, zp, p -> zr', int_convolved_j1, convolved_sin, qOc)
 
-        kick_Q0     = -dFrdQ*self.krOomega
-        kick_Qomega = dFrdQ*self.kzOomega
+        kick_Q0     = dFrdQ*self.omegaOtwokz
+        kick_Qomega = -dFrdQ*self.omegaOtwokz
 
         return kick_z, kick_r, kick_Q0, kick_Qomega
 
@@ -241,8 +242,7 @@ class field_data(object):
         convolved_j1 = self.convolved_j1(kr_cross_r, delta_u)
         convolved_sin = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z)
 
-        modeQr = (np.einsum('r, zr -> zr', -self.kr, self.dc_coords[:,:,1]) +\
-                    np.einsum('z, zr -> zr', self.kz, self.omega_coords[:,:,1])) * self.oneOomega
+        modeQr = self.omegaOtwokz * (self.dc_coords[:,:,1] - self.omega_coords[:,:,1])
 
         Ar = einsum('zr, rp, zp -> p', modeQr, convolved_j1, convolved_sin)*qOc
 
@@ -283,16 +283,15 @@ class field_data(object):
         int_convolved_cos_dz = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z*self.oneOkz)
 
         # Calculate Q_z for each mode
-        modeQz = (np.einsum('z, zr -> zr', self.kz, self.dc_coords[:,:,1]) +\
-                    np.einsum('r, zr -> zr', self.kr, self.omega_coords[:,:,1])) * self.oneOomega
+        modeQz = self.omegaOtwokr * (self.dc_coords[:,:,1] + self.omega_coords[:,:,1])
 
         kick_z = einsum('zr, rp, zp -> p', modeQz, convolved_j0, convolved_cos)*qOc
         kick_r = einsum('zr, rp, zp -> p', modeQz, d_convolved_j0_dr, int_convolved_cos_dz)*qOc
 
         dFzdQ = einsum('rp, zp, p -> zr', convolved_j0, int_convolved_cos_dz, qOc)
 
-        kick_Q0     = dFzdQ*self.kzOomega
-        kick_Qomega = dFzdQ*self.krOomega
+        kick_Q0     = dFzdQ*self.omegaOtwokr
+        kick_Qomega = dFzdQ*self.omegaOtwokr
 
 
         return kick_z, kick_r, kick_Q0, kick_Qomega
@@ -326,8 +325,7 @@ class field_data(object):
         convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
         convolved_cos = einsum('zp, z -> zp', cos(kz_cross_z), self.shape_function_z)
 
-        modeQz = (np.einsum('z, zr -> zr', self.kz, self.dc_coords[:,:,1]) +\
-                    np.einsum('r, zr -> zr', self.kr, self.omega_coords[:,:,1])) * self.oneOomega
+        modeQz = self.omegaOtwokr * (self.dc_coords[:,:,1] + self.omega_coords[:,:,1])
 
         Az = einsum('zr, rp, zp -> p', modeQz, convolved_j0, convolved_cos)*qOc
 
