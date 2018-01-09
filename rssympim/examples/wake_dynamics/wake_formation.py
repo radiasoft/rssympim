@@ -39,6 +39,8 @@ from rssympim.sympim_rz.io import field_io, particle_io
 from mpi4py import MPI as mpi
 
 import time
+import matplotlib as mpl
+mpl.use('TkAgg')
 from matplotlib import pyplot as plt
 
 ###
