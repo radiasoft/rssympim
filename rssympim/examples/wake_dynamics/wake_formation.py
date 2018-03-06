@@ -36,6 +36,8 @@ import numpy as np
 
 from rssympim.sympim_rz.io import field_io, particle_io
 
+from rssympim.sympim_rz.analysis import field_analysis
+
 from mpi4py import MPI as mpi
 
 import time
@@ -72,7 +74,7 @@ from matplotlib import pyplot as plt
 # Drive beam parameters
 #
 
-N_beam = 1.e9   # number of electrons
+N_beam  = 1.e9   # number of electrons
 sigma_r = 1.e-3 # cm
 sigma_z = 1.e-3 # cm
 
@@ -89,7 +91,7 @@ k_p = np.sqrt(4*np.pi*n0 *
 plasma_temperature = 10. # Kelvins
 
 # We are simulating electrons
-charge = consts.electron_charge
+charge = -consts.electron_charge
 mass = consts.electron_mass
 
 #
@@ -98,10 +100,12 @@ mass = consts.electron_mass
 
 # Run time considerations
 
-beta_beam = 1. # beam v_z/speed of light
+beta_beam = 1.  # beam v_z/speed of light, needs to be 1 or pretty
+                # close to it for the approximations on the
+                # beam space charge fields.
 domain_r = 3 # 2.*np.pi/k_p
-domain_l = 5 # 2.*np.pi/k_p
-steps_per_plasma_period = 30
+domain_l = 4 # 2.*np.pi/k_p
+steps_per_plasma_period = 25
 
 r_modes_per_kp = 8
 z_modes_per_kp = 8
@@ -172,19 +176,27 @@ z = length*np.random.rand(n_ptcls_per_core)
 ptcl_data.r[:] = x[:]
 ptcl_data.z[:] = z[:]
 
-macro_volume = np.sum(ptcl_data.r)
 # Properly adjust the weights for constant density
-scale_factor = n_ptcls_per_core*ptcl_data.r/macro_volume
 
-ptcl_data.qOc *= scale_factor
-ptcl_data.q   *= scale_factor
-ptcl_data.m   *= scale_factor
-ptcl_data.mc  *= scale_factor
+# compute the number of particles contained in a "uniform" macroparticle distribution
+ptcl_wgt = n0*fld_data.ptcl_width_z*fld_data.ptcl_width_r*ptcl_data.r
+
+# scale up to get the right total number of particles
+ptcl_wgt *= n0*np.pi*radius*radius*length/np.sum(ptcl_wgt)
+
+print np.sum(ptcl_wgt)
+print n0*np.pi*radius*radius*length
+
+ptcl_data.qOc *= ptcl_wgt
+ptcl_data.q   *= ptcl_wgt
+ptcl_data.m   *= ptcl_wgt
+ptcl_data.mc  *= ptcl_wgt
 
 # Generate a non-relativistic thermal distribution
-v_x = np.random.normal(0., consts.k_boltzmann*plasma_temperature/(2*ptcl_data.m), n_ptcls_per_core)
-v_y = np.random.normal(0., consts.k_boltzmann*plasma_temperature/(2*ptcl_data.m), n_ptcls_per_core)
-v_z = np.random.normal(0., consts.k_boltzmann*plasma_temperature/(2*ptcl_data.m), n_ptcls_per_core)
+sigma_v = np.sqrt(consts.k_boltzmann*plasma_temperature/ptcl_data.m)
+v_x = np.random.normal(sigma_v, sigma_v, n_ptcls_per_core)
+v_y = np.random.normal(0., sigma_v, n_ptcls_per_core)
+v_z = np.random.normal(0., sigma_v, n_ptcls_per_core)
 
 # pretend the r-axis is aligned to the x-axis for simplicity
 ell = x*v_y
@@ -198,11 +210,11 @@ ptcl_data.pr  = v_r * ptcl_data.m
 # Stimulate the beam exciting the wake, then dump
 #
 
-sim_len = 2.*z_beam + length
+sim_len = 4.*z_beam + 2.*length
 
 print 'z_beam', z_beam
 print 'length', length
-nsteps = int(sim_len/dtau)
+nsteps = int(sim_len/dtau)/2
 
 if rank == 0:
     print 'Simulation parameters:'
@@ -226,14 +238,16 @@ modified_ptcl_update_sequence = \
     beam_integrator(r_beam, z_beam, n_beam, dtau, fld_data)
 t0 = time.time()
 
-while beam_pos < length:
+while step_num < nsteps:
 
     # add field maps
+
+    beam_pos += beta_beam * dtau / 2
 
     modified_ptcl_update_sequence.update(ptcl_data, fld_data, beam_pos)
 
     # Beam is moving at the speed of light
-    beam_pos += beta_beam*dtau
+    beam_pos += beta_beam*dtau/2
 
     if rank == 0:
         if step_num%10 == 0:
@@ -257,9 +271,9 @@ plt.ylabel('pr')
 plt.show()
 plt.clf()
 
-plt.scatter(ptcl_data.z, ptcl_data.pz/ptcl_data.mc, s=1)
+plt.scatter(ptcl_data.z, ptcl_data.pr/ptcl_data.mc, s=1)
 plt.xlabel('z')
-plt.ylabel('pz')
+plt.ylabel('pr')
 
 plt.show()
 plt.clf()
@@ -270,3 +284,13 @@ ptcl_dumper = particle_io.particle_io('wake_ptcls')
 field_dumper.dump_field(fld_data, 0)
 ptcl_dumper.dump_ptcls(ptcl_data, 0)
 
+analysis = field_analysis.field_analysis()
+
+file_name = 'wake_flds_0.hdf5'
+
+analysis.open_file(file_name)
+
+analysis.plot_Ez('Ez_test.png')#, rmax=.02, zmin=0.03, zmax=0.07)
+analysis.plot_Er('Er_test.png', rmax=.02, zmin=0.03, zmax=0.07)
+
+analysis.close_file()

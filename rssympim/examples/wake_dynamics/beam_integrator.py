@@ -110,7 +110,7 @@ class beam_integrator:
 
         kick_pz[ptcls_in_beam]  = -2.*zeta[ptcls_in_beam]/(self.z_beam**2) * \
                                   0.25*ptcl_data.r[ptcls_in_beam]**2 *(1.-0.25*(ptcl_data.r[ptcls_in_beam]/self.r_beam)**2)
-        kick_pz[ptcls_out_beam] = -2.*zeta[ptcls_in_beam]/(self.z_beam**2) * \
+        kick_pz[ptcls_out_beam] = -2.*zeta[ptcls_out_beam]/(self.z_beam**2) * \
                                   self.r_beam**2 * (0.25 * np.log(ptcl_data.r[ptcls_out_beam]/self.r_beam) - .0625)
 
         kick_pz *= ptcl_data.qOc * dtau * self.kick_parameter
@@ -119,158 +119,101 @@ class beam_integrator:
         ptcl_data.pz += kick_pz
         ptcl_data.pr += kick_pr
 
+
     def S_z_external(self, ptcl_data, beam_pos):
         """
         Applies the similarity transformation due to the beam fields
         """
-
-        kick_pr = np.zeros(np.shape(ptcl_data.pr)[0])
-        kick_pz = np.zeros(np.shape(ptcl_data.pz)[0])
-
-        # find particles inside the beam length
-        ptcl_z_within_beam = np.where(np.abs(ptcl_data.z - beam_pos) < self.z_beam)
-        ptcl_z_without_beam = np.where(np.abs(ptcl_data.z - beam_pos) > self.z_beam)
-
-        # particles inside r0 get one kick, particles outside get another
-        ptcl_r_within_beam = np.where(ptcl_data.r < self.r_beam)
-        ptcl_r_without_beam = np.where(ptcl_data.r > self.r_beam)
-
-        #define 4 sectors of particles
-        ptcls_in_beam = np.intersect1d(ptcl_z_within_beam, ptcl_r_within_beam)
-        ptcls_out_beam = np.intersect1d(ptcl_z_without_beam, ptcl_r_without_beam)
-        ptcls_out_z = np.intersect1d(ptcl_z_without_beam, ptcl_r_within_beam) #particles that are within rbeam but not zbeam
-        ptcls_out_r = np.intersect1d(ptcl_z_within_beam, ptcl_r_without_beam) #particles that are within zbeam but not rbeam
-
-        #Pre-compute z-dependent density
-        ptcl_nz_in = (1 - (ptcl_data.z[ptcl_z_within_beam] - beam_pos) ** 2 / self.z_beam ** 2)
-        
-        #kick_pz is just a_z = phi in Quasistatic (v=c) approximation
-        #note that those outside the z-boundary get no pz kick
-        #wrap in try/excepts to validate case of zero particles
-        try:
-            kick_pz[ptcls_in_beam] = -self.kick_parameter*ptcl_nz_in* \
-                                (ptcl_data.r[ptcls_in_beam]**2/4 - ptcl_data.r[ptcls_in_beam]**4/(16*self.r_beam**2))
-        except ValueError:
-            pass
-        try:
-            kick_pz[ptcls_out_beam] = -self.kick_parameter*ptcl_nz_in* \
-                                ( (np.log(self.r_beam/ptcl_data.r[ptcls_out_beam])*self.r_beam**2/4) + (3*self.r_beam**2/16))
-        except ValueError:
-            pass                    
-        
-        #kick_pr is int[ (daz/dr) dz]
-        #kick_pr requires distinguishing between r and z particles
-        try:
-            kick_pr[ptcls_in_beam] = -self.kick_parameter *\
-                                 ptcl_data.z[ptcls_in_beam] * (1 - (2*ptcl_data.z[ptcls_in_beam]**2 -\
-                                 6*ptcl_data.z[ptcls_in_beam]*(ptcl_data.z[ptcls_in_beam] - beam_pos)+\
-                                 3*(ptcl_data.z[ptcls_in_beam] - beam_pos)**2)/(6*self.z_beam**2))*\
-                                 (ptcl_data.r[ptcls_in_beam]/2 - ptcl_data.r[ptcls_in_beam]**3/(4*self.r_beam**2))
-        except ValueError:
-            pass
-
-        try:
-            kick_pr[ptcls_out_z] = -self.kick_parameter * self.z_beam*\
-                                 (self.z_beam*self.r_beam**2/2*ptcl_data.r[ptcls_out_z])
-        except ValueError:
-            pass
-        
-        try:
-            kick_pr[ptcls_out_r] = -self.kick_parameter *\
-                                 ptcl_data.z[ptcls_out_r] * (1 - (2*ptcl_data.z[ptcls_out_r]**2 -\
-                                 6*ptcl_data.z[ptcls_out_r]*(ptcl_data.z[ptcls_out_r] - beam_pos)+\
-                                 3*(ptcl_data.z[ptcls_out_r] - beam_pos)**2)/(6*self.z_beam**2))*\
-                                 (ptcl_data.r[ptcls_out_r]/2 - ptcl_data.r[ptcls_out_r]**3/(4*self.r_beam**2))
-        except ValueError:
-            pass
-            
-        try:                     
-            kick_pr[ptcls_out_beam] = -self.kick_parameter *  self.z_beam*\
-                                  (ptcl_data.r[ptcls_out_beam]/2 - ptcl_data.r[ptcls_out_beam]**3/(4*self.r_beam**2))
-        except ValueError:
-            pass
-
+        kick_pz, kick_pr = self.compute_kick(ptcl_data, beam_pos)
 
         kick_pz *= ptcl_data.qOc
         kick_pr *= ptcl_data.qOc
 
-        ptcl_data.pz += kick_pz
-        ptcl_data.pr += kick_pr
+        ptcl_data.pz -= kick_pz
+        ptcl_data.pr -= kick_pr
+
 
     def S_z_inverse_external(self, ptcl_data, beam_pos):
         """
         Applies the inverse similarity transformation due to the beam fields
         """
 
+        kick_pz, kick_pr = self.compute_kick(ptcl_data, beam_pos)
+        
+        kick_pz *= ptcl_data.qOc
+        kick_pr *= ptcl_data.qOc
+
+        ptcl_data.pz += kick_pz
+        ptcl_data.pr += kick_pr
+
+
+    def compute_kick(self, ptcl_data, beam_pos):
+
         kick_pr = np.zeros(np.shape(ptcl_data.pr)[0])
         kick_pz = np.zeros(np.shape(ptcl_data.pz)[0])
 
         # find particles inside the beam length
         ptcl_z_within_beam = np.where(np.abs(ptcl_data.z - beam_pos) < self.z_beam)
-        ptcl_z_without_beam = np.where(np.abs(ptcl_data.z - beam_pos) > self.z_beam)
+        if np.shape(ptcl_z_within_beam)[1] == 0:
+            return kick_pz, kick_pr
 
         # particles inside r0 get one kick, particles outside get another
         ptcl_r_within_beam = np.where(ptcl_data.r < self.r_beam)
         ptcl_r_without_beam = np.where(ptcl_data.r > self.r_beam)
 
-        #define 4 sectors of particles
+        # define 4 sectors of particles
+        ptcls_in_r = np.intersect1d(ptcl_z_within_beam, ptcl_r_within_beam)
+        ptcls_out_r = np.intersect1d(ptcl_z_within_beam,
+                                     ptcl_r_without_beam)  # particles that are within zbeam but not rbeam
+
+        # kick_pz is just a_z = phi in Quasistatic (v=c) approximation
+        # note that those outside the z-boundary get no pz kick
+        # wrap in try/excepts to validate case of zero particles
+        kick_pz[ptcls_in_r] = -self.kick_parameter * (1 - (ptcl_data.z[ptcls_in_r] - beam_pos) ** 2 / self.z_beam ** 2) * \
+                                     (ptcl_data.r[ptcls_in_r] ** 2 / 4 -
+                                      ptcl_data.r[ptcls_in_r] ** 4 / (16 * self.r_beam ** 2))
+
+        kick_pz[ptcls_out_r] = -self.kick_parameter * \
+                               (1 - (ptcl_data.z[ptcls_out_r] - beam_pos) ** 2 / self.z_beam ** 2) * \
+                               0.25 * self.r_beam ** 2 * (np.log(ptcl_data.r[ptcls_out_r] / self.r_beam ) + .75)
+
+        # kick_pr is int[ (daz/dr) dz]
+        # kick_pr requires distinguishing between r and z particles
+        kick_pr[ptcls_in_r] = -self.kick_parameter * \
+                                     ptcl_data.z[ptcls_in_r] - (ptcl_data.z[ptcls_in_r] - beam_pos)**3/(self.z_beam **2) * \
+                                     (ptcl_data.r[ptcls_in_r] / 2 - ptcl_data.r[ptcls_in_r] ** 3 / (4 * self.r_beam ** 2))
+
+        kick_pr[ptcls_out_r] = -self.kick_parameter * \
+                               (ptcl_data.z[ptcls_out_r] - (ptcl_data.z[ptcls_out_r] - beam_pos)**3/(self.z_beam **2)) * \
+                                   (self.r_beam ** 2)/(4 * ptcl_data.r[ptcls_out_r])
+
+        return ptcl_data.qOc*kick_pz, ptcl_data.qOc*kick_pr
+
+
+    def compute_az(self, ptcl_data, beam_pos):
+
+        A_z = np.zeros(np.shape(ptcl_data.pz)[0])
+
+        # find particles inside the beam length
+        ptcl_z_within_beam = np.where(np.abs(ptcl_data.z - beam_pos) < self.z_beam)
+
+        # particles inside r0 get one kick, particles outside get another
+        ptcl_r_within_beam = np.where(ptcl_data.r < self.r_beam)
+        ptcl_r_without_beam = np.where(ptcl_data.r > self.r_beam)
+
+        # define 4 sectors of particles
         ptcls_in_beam = np.intersect1d(ptcl_z_within_beam, ptcl_r_within_beam)
-        ptcls_out_beam = np.intersect1d(ptcl_z_without_beam, ptcl_r_without_beam)
-        ptcls_out_z = np.intersect1d(ptcl_z_without_beam, ptcl_r_within_beam) #particles that are within rbeam but not zbeam
-        ptcls_out_r = np.intersect1d(ptcl_z_within_beam, ptcl_r_without_beam) #particles that are within zbeam but not rbeam
+        ptcls_out_beam = np.intersect1d(ptcl_z_within_beam, ptcl_r_without_beam)
 
-        #Pre-compute z-dependent density
+        # Pre-compute z-dependent density
         ptcl_nz_in = (1 - (ptcl_data.z[ptcl_z_within_beam] - beam_pos) ** 2 / self.z_beam ** 2)
-        
-        #kick_pz is just a_z = phi in Quasistatic (v=c) approximation
-        #note that those outside the z-boundary get no pz kick
-        #wrap in try/excepts to validate case of zero particles
-        try:
-            kick_pz[ptcls_in_beam] = -self.kick_parameter*ptcl_nz_in* \
-                                (ptcl_data.r[ptcls_in_beam]**2/4 - ptcl_data.r[ptcls_in_beam]**4/(16*self.r_beam**2))
-        except ValueError:
-            pass
-        try:
-            kick_pz[ptcls_out_beam] = -self.kick_parameter*ptcl_nz_in* \
-                                ( (np.log(self.r_beam/ptcl_data.r[ptcls_out_beam])*self.r_beam**2/4) + (3*self.r_beam**2/16))
-        except ValueError:
-            pass                    
-        
-        #kick_pr is int[ (daz/dr) dz]
-        #kick_pr requires distinguishing between r and z particles
-        try:
-            kick_pr[ptcls_in_beam] = -self.kick_parameter *\
-                                 ptcl_data.z[ptcls_in_beam] * (1 - (2*ptcl_data.z[ptcls_in_beam]**2 -\
-                                 6*ptcl_data.z[ptcls_in_beam]*(ptcl_data.z[ptcls_in_beam] - beam_pos)+\
-                                 3*(ptcl_data.z[ptcls_in_beam] - beam_pos)**2)/(6*self.z_beam**2))*\
-                                 (ptcl_data.r[ptcls_in_beam]/2 - ptcl_data.r[ptcls_in_beam]**3/(4*self.r_beam**2))
-        except ValueError:
-            pass
 
-        try:
-            kick_pr[ptcls_out_z] = -self.kick_parameter * self.z_beam*\
-                                 (self.z_beam*self.r_beam**2/2*ptcl_data.r[ptcls_out_z])
-        except ValueError:
-            pass
-        
-        try:
-            kick_pr[ptcls_out_r] = -self.kick_parameter *\
-                                 ptcl_data.z[ptcls_out_r] * (1 - (2*ptcl_data.z[ptcls_out_r]**2 -\
-                                 6*ptcl_data.z[ptcls_out_r]*(ptcl_data.z[ptcls_out_r] - beam_pos)+\
-                                 3*(ptcl_data.z[ptcls_out_r] - beam_pos)**2)/(6*self.z_beam**2))*\
-                                 (ptcl_data.r[ptcls_out_r]/2 - ptcl_data.r[ptcls_out_r]**3/(4*self.r_beam**2))
-        except ValueError:
-            pass
-            
-        try:                     
-            kick_pr[ptcls_out_beam] = -self.kick_parameter *  self.z_beam*\
-                                  (ptcl_data.r[ptcls_out_beam]/2 - ptcl_data.r[ptcls_out_beam]**3/(4*self.r_beam**2))
-        except ValueError:
-            pass
+        A_z[ptcls_in_beam] = -self.kick_parameter * ptcl_nz_in * \
+                                     (ptcl_data.r[ptcls_in_beam] ** 2 / 4 - ptcl_data.r[ptcls_in_beam] ** 4 / (
+                                     16 * self.r_beam ** 2))
 
-        
-        kick_pz *= ptcl_data.qOc
-        kick_pr *= ptcl_data.qOc
+        A_z[ptcls_out_beam] = -self.kick_parameter * ptcl_nz_in * \
+                                      ((np.log(self.r_beam / ptcl_data.r[ptcls_out_beam]) * self.r_beam ** 2 / 4) + (
+                                      3 * self.r_beam ** 2 / 16))
 
-        ptcl_data.pz -= kick_pz
-        ptcl_data.pr -= kick_pr
+        return ptcl_data.qOc * A_z
