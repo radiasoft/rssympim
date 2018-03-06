@@ -8,7 +8,7 @@ class integrator:
         self.dt = dt
         self.sim_maps = similarity_drift_maps.similarity_drift_maps()
         self.ptcl_maps = ptcl_maps.ptcl_maps(dt)
-        self.field_maps = field_maps.field_maps(fld_data.omega, dt)
+        self.field_maps = field_maps.field_maps(fld_data, dt)
 
 
     def single_step_fields(self, field_data):

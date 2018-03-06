@@ -97,7 +97,7 @@ class field_analysis:
         plt.savefig(fig_name)
 
 
-    def plot_Ez(self, fig_name, scale=False):
+    def plot_Ez(self, fig_name, **kwargs):
         """
         Plot the longitudinal electric field in units of statV/cm.
 
@@ -107,17 +107,27 @@ class field_analysis:
 
         plt.clf()
 
-        EZ, RR, LL = self.compute_Ez()
-
         R = self.file.attrs['R']
         L = self.file.attrs['L']
+        zmin = 0.
 
-        if scale:
-            EZ /= scale
+        if 'rmax' in kwargs.keys():
+            R = kwargs['rmax']
+
+        if 'zmax' in kwargs.keys():
+            L = kwargs['zmax']
+
+        if 'zmin' in kwargs.keys():
+            zmin = kwargs['zmin']
+
+        EZ, RR, LL = self.compute_Ez(zmin, L, R)
+
+        if 'scale' in kwargs.keys():
+            EZ /= kwargs['scale']
 
         Ez_plot = plt.imshow(EZ.transpose(),
                              cmap=plt.cm.RdBu,
-                             extent=[0, L, 0, R],
+                             extent=[zmin, L, 0, R],
                              origin='lower', interpolation='gaussian')
 
         Ez_contour = plt.contour(LL, RR, EZ, colors='k')
@@ -130,7 +140,7 @@ class field_analysis:
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
         cbar = plt.colorbar(Ez_plot)
-        if scale:
+        if 'scale' in kwargs.keys():
             cbar.ax.set_ylabel(r'$E_z/E_0$')
         else:
             cbar.ax.set_ylabel(r'$E_z$ [statV/cm]')
@@ -140,7 +150,7 @@ class field_analysis:
         plt.savefig(fig_name)
 
 
-    def plot_Er(self, fig_name, scale=False):
+    def plot_Er(self, fig_name, **kwargs):
         """
         Plot the longitudinal electric field in units of statV/cm.
 
@@ -150,17 +160,27 @@ class field_analysis:
 
         plt.clf()
 
-        ER, RR, LL = self.compute_Er()
-
         R = self.file.attrs['R']
         L = self.file.attrs['L']
+        zmin = 0.
 
-        if scale:
-            ER /= scale
+        if 'rmax' in kwargs.keys():
+            R = kwargs['rmax']
+
+        if 'zmax' in kwargs.keys():
+            L = kwargs['zmax']
+
+        if 'zmin' in kwargs.keys():
+            zmin = kwargs['zmin']
+
+        ER, RR, LL = self.compute_Er(zmin, L, R)
+
+        if 'scale' in kwargs.keys():
+            ER /= kwargs['scale']
 
         Er_plot = plt.imshow(ER.transpose(),
                              cmap=plt.cm.RdBu,
-                             extent=[0, L, 0, R],
+                             extent=[zmin, L, 0, R],
                              origin='lower', interpolation='gaussian')
 
         Er_contour = plt.contour(LL, RR, ER, colors='k')
@@ -173,7 +193,7 @@ class field_analysis:
         plt.xlabel(r'$z$ [cm]')
         plt.ylabel(r'$r$ [cm]')
         cbar = plt.colorbar(Er_plot)
-        if scale:
+        if 'scale' in kwargs.keys():
             cbar.ax.set_ylabel(r'$E_r/E_0$')
         else:
             cbar.ax.set_ylabel(r'$E_r$ [statV/cm]')
@@ -215,17 +235,13 @@ class field_analysis:
         plt.savefig(fig_name)
 
 
-    def compute_Ez(self):
+    def compute_Ez(self, zmin, L, R):
         """
         Compute the longitudinal electric field in units of statV/cm.
         :return: EZ, a meshgrid array of the electric field
         """
 
         if self.file_name:
-
-            # get the domain length and radius
-            R = self.file.attrs['R']
-            L = self.file.attrs['L']
 
             # get the k-vectors
             kr = np.array(self.file.get('kr'))
@@ -245,7 +261,7 @@ class field_analysis:
             P_z = (kzpdc + krpom)/om
 
             R_range = np.arange(0., R, R/n_modes_r)
-            Z_range = np.arange(0., L, L/n_modes_z)
+            Z_range = np.arange(zmin, L, (L-zmin)/n_modes_z)
 
             RR, ZZ = np.meshgrid(R_range, Z_range)
 
@@ -256,7 +272,7 @@ class field_analysis:
             the_j0 = j0(kr_cross_r)
             the_cos = cos(kz_cross_z)
 
-            EZ = einsum('ik, klm, ilm, ik->lm', P_z, the_j0, the_cos, mm)
+            EZ = einsum('ik, klm, ilm->lm', P_z/mm, the_j0, the_cos)
 
             return EZ, RR, ZZ
 
@@ -264,7 +280,7 @@ class field_analysis:
         else:
             print 'File must be opened first.'
 
-    def compute_Er(self):
+    def compute_Er(self, zmin, L, R):
         """
         Compute the radial electric field in units of statV/cm.
         :return: ER, a meshgrid array of the electric field
@@ -295,18 +311,18 @@ class field_analysis:
             P_r = (kzpom - krpdc)/om
 
             R_range = np.arange(0., R, R/n_modes_r)
-            Z_range = np.arange(0., L, L/n_modes_z)
+            Z_range = np.arange(zmin, L, (L-zmin)/n_modes_z)
 
             RR, ZZ = np.meshgrid(R_range, Z_range)
 
-            kr_cross_r = einsum('i, lm -> ilm', kr, RR)
-            kz_cross_z = einsum('k, lm -> klm', kz, ZZ)
+            kr_cross_r = einsum('k, lm -> klm', kr, RR)
+            kz_cross_z = einsum('i, lm -> ilm', kz, ZZ)
 
             # generate a mesh grid
             the_j1 = j1(kr_cross_r)
             the_sin = sin(kz_cross_z)
 
-            ER = einsum('ik, klm, ilm, ik->lm', P_r, the_j1, the_sin, mm)
+            ER = einsum('ik, klm, ilm->lm', P_r/mm, the_j1, the_sin)
 
             return ER, RR, ZZ
 

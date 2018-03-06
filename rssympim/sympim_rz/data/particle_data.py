@@ -45,8 +45,8 @@ class particle_data:
 
         self.species_name = species_name
 
-        self.q = self.weight*charge*np.ones(n_particles)
-        self.m = [np.abs(self.weight*mass)]*np.ones(n_particles)
+        self.q = charge*np.ones(n_particles)
+        self.m = mass*np.ones(n_particles)
 
         self.qOc = self.q/consts.c
         self.mc = self.m*consts.c

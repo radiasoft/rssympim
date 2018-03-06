@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import sin, cos, einsum
 from scipy.special import j0, j1, jn_zeros
+from rssympim.constants import constants as consts
 # Commented out until MPI implementation is ready
 from mpi4py import MPI as mpi
 
@@ -68,7 +69,7 @@ class field_data(object):
                 self.omega[idx_z,idx_r]= \
                     np.sqrt(self.kr[idx_r]**2 +self.kz[idx_z]**2)
                 # Integral of cos^2(k_z z)*J_z(k_r r)^2 over the domain volume
-                self.mode_mass[idx_z, idx_r] = R*R*L*(j1(zero_zeros[idx_r]))**2/(8.)
+                self.mode_mass[idx_z, idx_r] = R*R*L*(j1(zero_zeros[idx_r]))**2/(4.*consts.c)
 
         self.omegaOtwokz = 0.5 * np.einsum('z, zr -> zr', 1. / self.kz, self.omega)
         self.omegaOtwokr = 0.5 * np.einsum('r, zr -> zr', 1. / self.kr, self.omega)
@@ -204,7 +205,7 @@ class field_data(object):
         # Calculate Q_r for each mode
         modeQr = self.omegaOtwokz * (self.dc_coords[:,:,1] - self.omega_coords[:,:,1])
 
-        kick_z = einsum('zr, rp, zp -> p', modeQr, int_convolved_j1, d_convolved_sin_dz)*qOc
+        kick_z = einsum('zr, rp, zp -> p', modeQr, int_convolved_j1, d_convolved_sin_dz) * qOc
         kick_r = einsum('zr, rp, zp -> p', modeQr, convolved_j1, convolved_sin) * qOc
         dFrdQ = einsum('rp, zp, p -> zr', int_convolved_j1, convolved_sin, qOc)
 
