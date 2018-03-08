@@ -43,7 +43,6 @@ class field_analysis:
         :param fig_name:
         :return:
         """
-
         plt.clf()
 
         P_omega = np.array(self.file.get('p_omega'))
@@ -255,10 +254,14 @@ class field_analysis:
             P_dc = self.file.get('p_dc')
             P_omega = self.file.get('p_omega')
 
-            kzpdc = np.einsum('z, zr -> zr', kz, P_dc)
-            krpom = np.einsum('r, zr -> zr', kr, P_omega)
+            P_dc = np.array(P_dc)
+            P_omega = np.array(P_omega)
 
-            P_z = (kzpdc + krpom)/om
+            dotQz = (P_dc + P_omega)/(mm)
+
+            omO2kz = .5*np.einsum('zr, z -> zr', om, 1/kr)
+
+            dotQz *= omO2kz
 
             R_range = np.arange(0., R, R/n_modes_r)
             Z_range = np.arange(zmin, L, (L-zmin)/n_modes_z)
@@ -272,13 +275,13 @@ class field_analysis:
             the_j0 = j0(kr_cross_r)
             the_cos = cos(kz_cross_z)
 
-            EZ = einsum('ik, klm, ilm->lm', P_z/mm, the_j0, the_cos)
+            EZ = einsum('ik, klm, ilm->lm', dotQz, the_j0, the_cos)
 
             return EZ, RR, ZZ
 
-
         else:
             print 'File must be opened first.'
+
 
     def compute_Er(self, zmin, L, R):
         """
@@ -305,10 +308,14 @@ class field_analysis:
             P_dc = self.file.get('p_dc')
             P_omega = self.file.get('p_omega')
 
-            krpdc = np.einsum('r, zr -> zr', kr, P_dc)
-            kzpom = np.einsum('z, zr -> zr', kz, P_omega)
+            P_dc = np.array(P_dc)
+            P_omega = np.array(P_omega)
 
-            P_r = (kzpom - krpdc)/om
+            dotQr = (P_dc - P_omega)/(mm)
+
+            omO2kr = .5*np.einsum('zr, z -> zr', om, 1/kz)
+
+            dotQr *= omO2kr
 
             R_range = np.arange(0., R, R/n_modes_r)
             Z_range = np.arange(zmin, L, (L-zmin)/n_modes_z)
@@ -322,10 +329,9 @@ class field_analysis:
             the_j1 = j1(kr_cross_r)
             the_sin = sin(kz_cross_z)
 
-            ER = einsum('ik, klm, ilm->lm', P_r/mm, the_j1, the_sin)
+            ER = einsum('ik, klm, ilm->lm', dotQr, the_j1, the_sin)
 
             return ER, RR, ZZ
-
 
         else:
             print 'File must be opened first.'
