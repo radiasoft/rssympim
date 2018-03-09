@@ -116,8 +116,8 @@ class beam_integrator:
         kick_pz *= ptcl_data.qOc * dtau * self.kick_parameter
         kick_pr *= ptcl_data.qOc * dtau * self.kick_parameter
 
-        ptcl_data.pz += kick_pz
-        ptcl_data.pr += kick_pr
+        ptcl_data.pz -= kick_pz
+        ptcl_data.pr -= kick_pr
 
 
     def S_z_external(self, ptcl_data, beam_pos):
@@ -180,8 +180,8 @@ class beam_integrator:
         # kick_pr is int[ (daz/dr) dz]
         # kick_pr requires distinguishing between r and z particles
         kick_pr[ptcls_in_r] = -self.kick_parameter * \
-                                     ptcl_data.z[ptcls_in_r] - (ptcl_data.z[ptcls_in_r] - beam_pos)**3/(self.z_beam **2) * \
-                                     (ptcl_data.r[ptcls_in_r] / 2 - ptcl_data.r[ptcls_in_r] ** 3 / (4 * self.r_beam ** 2))
+                              (ptcl_data.z[ptcls_in_r] - (ptcl_data.z[ptcls_in_r] - beam_pos)**3/(self.z_beam **2) * \
+                                     (ptcl_data.r[ptcls_in_r] / 2 - ptcl_data.r[ptcls_in_r] ** 3 / (4 * self.r_beam ** 2)))
 
         kick_pr[ptcls_out_r] = -self.kick_parameter * \
                                (ptcl_data.z[ptcls_out_r] - (ptcl_data.z[ptcls_out_r] - beam_pos)**3/(self.z_beam **2)) * \
