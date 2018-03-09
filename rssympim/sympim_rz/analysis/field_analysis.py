@@ -11,6 +11,7 @@ from rssympim.constants import constants as consts
 import numpy as np
 from numpy import einsum, cos, sin
 from scipy.special import j0, j1, jn_zeros
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class field_analysis:
@@ -157,49 +158,51 @@ class field_analysis:
         :return:
         """
 
-        plt.clf()
-
-        R = self.file.attrs['R']
-        L = self.file.attrs['L']
-        zmin = 0.
-
-        if 'rmax' in kwargs.keys():
-            R = kwargs['rmax']
-
-        if 'zmax' in kwargs.keys():
-            L = kwargs['zmax']
-
-        if 'zmin' in kwargs.keys():
-            zmin = kwargs['zmin']
+        R = kwargs.pop('rmax', self.file.attrs['R'])
+        L = kwargs.pop('zmax', self.file.attrs['L'])
+        zmin = kwargs.pop('zmin', 0)
 
         ER, RR, LL = self.compute_Er(zmin, L, R)
 
-        if 'scale' in kwargs.keys():
-            ER /= kwargs['scale']
+        scale = kwargs.pop('scale', 1.)
+        ER /= scale
 
-        Er_plot = plt.imshow(ER.transpose(),
-                             cmap=plt.cm.RdBu,
-                             extent=[zmin, L, 0, R],
-                             origin='lower', interpolation='gaussian')
+        pltextent = [zmin, L, 0, R]
 
-        Er_contour = plt.contour(LL, RR, ER, colors='k')
+        # desired aspect is ratio of horizontal axis to vertical axis
+        wantaspect = (pltextent[1] - pltextent[0]) / (pltextent[3] - pltextent[2])
 
-        #fmt = ticker.LogFormatterSciNotation()
-        #fmt.create_dummy_axis()
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.gca()
 
-        #plt.clabel(Er_contour, inline=True, fontsize=9, fmt=fmt)
+        Er_plot = ax.imshow(ER.transpose(),
+                            cmap=plt.cm.RdBu,
+                            extent=pltextent,
+                            origin='lower', interpolation='bicubic', aspect=wantaspect)
 
-        plt.xlabel(r'$z$ [cm]')
-        plt.ylabel(r'$r$ [cm]')
-        cbar = plt.colorbar(Er_plot)
+        lvls = np.linspace(np.min(ER), np.max(ER), 5)
+
+        # Er_contour = ax.contourf(LL, RR, ER,lvls,cmap=plt.cm.RdBu)
+
+        Er_contour = ax.contour(LL, RR, ER, colors='k')  # cmap=plt.cm.RdBu)
+
+        divider = make_axes_locatable(ax)
+        # negative pad moves the color bar closer
+        cax = divider.append_axes("right", size="4%", pad=-0.4)
+
+        ax.set_xlabel(r'$z$ [cm]')
+        ax.set_ylabel(r'$r$ [cm]')
+        cbar = plt.colorbar(Er_plot, cax=cax)
         if 'scale' in kwargs.keys():
             cbar.ax.set_ylabel(r'$E_r/E_0$')
         else:
             cbar.ax.set_ylabel(r'$E_r$ [statV/cm]')
 
-        plt.tight_layout()
+        ax.set_title(r'E$_r$')
+
+        # fig.tight_layout()
         print 'Saving figure', fig_name
-        plt.savefig(fig_name)
+        fig.savefig(fig_name)
 
 
     def plot_acceleration(self, fig_name,
@@ -291,11 +294,6 @@ class field_analysis:
 
         if self.file_name:
 
-            # get the domain length and radius
-            # get the domain length and radius
-            R = self.file.attrs['R']
-            L = self.file.attrs['L']
-
             # get the k-vectors
             kr = np.array(self.file.get('kr'))
             kz = np.array(self.file.get('kz'))
@@ -311,25 +309,25 @@ class field_analysis:
             P_dc = np.array(P_dc)
             P_omega = np.array(P_omega)
 
-            dotQr = (P_dc - P_omega)/(mm)
+            dotQr = (P_dc - P_omega) / (mm)
 
-            omO2kr = .5*np.einsum('zr, z -> zr', om, 1/kz)
+            omO2kr = .5 * np.einsum('zr, z -> zr', om, 1 / kz)
 
             dotQr *= omO2kr
 
-            R_range = np.arange(0., R, R/n_modes_r)
-            Z_range = np.arange(zmin, L, (L-zmin)/n_modes_z)
+            R_range = np.linspace(0, R, n_modes_r)  # np.arange(0., R, R/n_modes_r)
+            Z_range = np.linspace(zmin, L, n_modes_z)  # np.arange(zmin, L, (L-zmin)/n_modes_z)
 
             RR, ZZ = np.meshgrid(R_range, Z_range)
 
-            kr_cross_r = einsum('k, lm -> klm', kr, RR)
-            kz_cross_z = einsum('i, lm -> ilm', kz, ZZ)
+            kr_cross_r = np.einsum('k, lm -> klm', kr, RR)
+            kz_cross_z = np.einsum('i, lm -> ilm', kz, ZZ)
 
             # generate a mesh grid
             the_j1 = j1(kr_cross_r)
-            the_sin = sin(kz_cross_z)
+            the_sin = np.sin(kz_cross_z)
 
-            ER = einsum('ik, klm, ilm->lm', dotQr, the_j1, the_sin)
+            ER = np.einsum('ik, klm, ilm->lm', dotQr, the_j1, the_sin)
 
             return ER, RR, ZZ
 
