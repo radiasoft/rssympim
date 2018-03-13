@@ -10,3 +10,8 @@ proton_mass = 1.676219e-24    #grams
 
 # Thermodynamic quantities
 k_boltzmann = 1.3807e-16      #ergs/Kelvin
+
+
+# Numerical constants
+#euler-mascheroni number
+euler_gamma = 0.57721566490153286060651209008240243104215933593992
