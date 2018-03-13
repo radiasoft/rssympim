@@ -6,6 +6,7 @@ Stephen Webb, Nathan Cook
 """
 
 import h5py
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 from rssympim.constants import constants as consts
