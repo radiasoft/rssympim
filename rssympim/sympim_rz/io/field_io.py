@@ -8,7 +8,7 @@ import h5py
 from mpi4py import MPI
 import numpy as np
 
-class field_io:
+class field_io(object):
 
     def __init__(self, field_name):
 

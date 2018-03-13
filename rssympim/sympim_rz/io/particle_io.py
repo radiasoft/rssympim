@@ -8,7 +8,7 @@ import h5py
 from mpi4py import MPI
 import numpy as np
 
-class particle_io:
+class particle_io(object):
 
     def __init__(self, particle_name):
 
