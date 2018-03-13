@@ -35,6 +35,8 @@ class field_io:
 
             dump_file.attrs['R'] = field_class.domain_R
             dump_file.attrs['L'] = field_class.domain_L
+            dump_file.attrs['dz'] = field_class.ptcl_width_z
+            dump_file.attrs['dr'] = field_class.ptcl_width_r
 
             modep_dset = dump_file.create_dataset(
                 'p_omega', data = field_class.omega_coords[:,:,0]
