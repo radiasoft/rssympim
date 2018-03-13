@@ -13,8 +13,12 @@ from numpy import einsum, cos, sin
 from scipy.special import j0, j1, jn_zeros
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+#import rcParams dictionary
+mplrc = pickle.load( open( "rssympim_style.txt", "r" ) )
+mpl.rcParams = mplrc
 
-class field_analysis:
+
+class field_analysis(object):
 
     def __init__(self):
         self.file_name = False
