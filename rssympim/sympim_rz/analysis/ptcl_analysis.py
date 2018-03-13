@@ -13,6 +13,7 @@ import numpy as np
 from numpy import einsum, cos, sin
 from scipy.special import j0, j1, jn_zeros
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import cPickle as pickle
 
 #load matplotlib rc settings from file
 mplrc = pickle.load( open( "rssympim_style.txt", "r" ) )
