@@ -10,13 +10,17 @@ import numpy as np
 
 class particle_io(object):
 
-    def __init__(self, particle_name):
+    def __init__(self, particle_name, parallel_hdf5 = False):
 
         self.ptcl_name = particle_name
 
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.rank
         self.size = self.comm.size
+
+        self.parallel = False
+        if parallel_hdf5:
+            self.parallel = True
 
 
     def dump_ptcls(self, ptcl_class, step_number):
@@ -25,33 +29,93 @@ class particle_io(object):
         # together using MPI
         file_name = self.ptcl_name + '_' + str(step_number) + '.hdf5'
 
-        dump_file = h5py.File(file_name, 'w',
-                              driver='mpio', comm=self.comm)
+        if self.parallel:
 
-        dump_file.attrs['charge'] = ptcl_class.charge
-        dump_file.attrs['mass'] = ptcl_class.mass
-        dump_file.attrs['n_ptcls'] = np.shape(ptcl_class.pr)[0]
+            dump_file = h5py.File(file_name, 'w',
+                                  driver='mpio', comm=self.comm)
 
-        ptcl_pr = dump_file.create_dataset(
-            'pr', data = ptcl_class.pr
-        )
-        ptcl_r = dump_file.create_dataset(
-            'r', data = ptcl_class.r
-        )
-        ptcl_pz = dump_file.create_dataset(
-            'pz', data = ptcl_class.pz
-        )
-        ptcl_z = dump_file.create_dataset(
-            'z', data = ptcl_class.z
-        )
-        ptcl_pl = dump_file.create_dataset(
-            'pl', data = ptcl_class.ell
-        )
-        ptcl_weight = dump_file.create_dataset(
-            'weight', data = ptcl_class.weight
-        )
+            dump_file.attrs['charge'] = ptcl_class.charge
+            dump_file.attrs['mass'] = ptcl_class.mass
+            dump_file.attrs['n_ptcls'] = np.shape(ptcl_class.pr)[0]
 
-        dump_file.close()
+            ptcl_pr = dump_file.create_dataset(
+                'pr', data = ptcl_class.pr
+            )
+            ptcl_r = dump_file.create_dataset(
+                'r', data = ptcl_class.r
+            )
+            ptcl_pz = dump_file.create_dataset(
+                'pz', data = ptcl_class.pz
+            )
+            ptcl_z = dump_file.create_dataset(
+                'z', data = ptcl_class.z
+            )
+            ptcl_pl = dump_file.create_dataset(
+                'pl', data = ptcl_class.ell
+            )
+            ptcl_weight = dump_file.create_dataset(
+                'weight', data = ptcl_class.weight
+            )
+
+            dump_file.close()
+
+        elif self.rank == 0:
+            dump_file = h5py.File(file_name, 'w')
+
+            pr = np.zeros(np.shape(ptcl_class.pr))
+            pz = np.zeros(np.shape(ptcl_class.pz))
+            pl = np.zeros(np.shape(ptcl_class.ell))
+
+            r = np.zeros(np.shape(ptcl_class.r))
+            z = np.zeros(np.shape(ptcl_class.z))
+
+            wgt = np.zeros(np.shape(ptcl_class.weight))
+
+            pr[:] = ptcl_class.pr[:]
+            pz[:] = ptcl_class.pz[:]
+            pl[:] = ptcl_class.ell[:]
+
+            r[:] = ptcl_class.r[:]
+            z[:] = ptcl_class.z[:]
+
+            wgt[:] = ptcl_class.weight[:]
+
+            for sndr in range(0, self.size):
+                ptclclass = self.comm.recv(source=sndr, tag=11)
+
+                np.append(pr, ptclclass.pr)
+                np.append(pz, ptclclass.pz)
+                np.append(pl, ptclclass.ell)
+                np.append(r, ptclclass.r)
+                np.append(z, ptclclass.z)
+                np.append(wgt, ptclclass.weight)
+
+            dump_file.attrs['charge'] = ptcl_class.charge
+            dump_file.attrs['mass'] = ptcl_class.mass
+            dump_file.attrs['n_ptcls'] = np.shape(ptcl_class.pr)[0]
+
+            ptcl_pr = dump_file.create_dataset(
+                'pr', data = pr
+            )
+            ptcl_r = dump_file.create_dataset(
+                'r', data = r
+            )
+            ptcl_pz = dump_file.create_dataset(
+                'pz', data = pz
+            )
+            ptcl_z = dump_file.create_dataset(
+                'z', data = z
+            )
+            ptcl_pl = dump_file.create_dataset(
+                'pl', data = pl
+            )
+            ptcl_weight = dump_file.create_dataset(
+                'weight', data = weight
+            )
+
+        else:
+            # send the data to rank 0
+            self.comm.send(ptcl_class, dest=0, tag=11)
 
 
     def read_ptcls(self, file_name):
