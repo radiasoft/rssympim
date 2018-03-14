@@ -16,8 +16,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import cPickle as pickle
 
 #import rcParams dictionary
-mplrc = pickle.load( open( "rssympim_style.txt", "r" ) )
-mpl.rcParams = mplrc
+#mplrc = pickle.load( open( "rssympim_style.txt", "r" ) )
+#mpl.rcParams = mplrc
 
 
 class field_analysis(object):
@@ -268,7 +268,7 @@ class field_analysis(object):
 
             dotQz = (P_dc + P_omega)/(mm)
 
-            omO2kz = .5*np.einsum('zr, z -> zr', om, 1/kr)
+            omO2kz = .5*np.einsum('zr, r -> zr', om, 1/kr)
 
             dotQz *= omO2kz
 
@@ -321,8 +321,8 @@ class field_analysis(object):
 
             dotQr *= omO2kr
 
-            R_range = np.linspace(0, R, n_modes_r)  # np.arange(0., R, R/n_modes_r)
-            Z_range = np.linspace(zmin, L, n_modes_z)  # np.arange(zmin, L, (L-zmin)/n_modes_z)
+            R_range = np.linspace(0, R, n_modes_r)
+            Z_range = np.linspace(zmin, L, n_modes_z)
 
             RR, ZZ = np.meshgrid(R_range, Z_range)
 

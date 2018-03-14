@@ -7,6 +7,7 @@ boundary replaces that particle with a particle from a thermal distribution.
 Author: Stephen Webb
 """
 
+from rssympim.constants import constants as consts
 import numpy as np
 
 class radial_thermal:
@@ -38,23 +39,26 @@ class radial_thermal:
 
         n_new_ptcls = np.shape(out_of_bounds[0])[0]
 
-        # pretend all the particles are on the x-axis for simplicity
-        sigma = np.sqrt(self.temp)
-        px  = -np.abs(np.random.normal(0.,sigma, n_new_ptcls)) # Must be moving radially inward
-        py  = np.random.normal(0.,sigma, n_new_ptcls)
-        pz  = np.random.normal(0.,sigma, n_new_ptcls)
-        rad = np.array([fld_data.domain_R]*n_new_ptcls)
+        if n_new_ptcls > 0:
 
-        Ar = fld_data.compute_Ar(ptcl_data.r[out_of_bounds],
-                                 ptcl_data.z[out_of_bounds],
-                                 ptcl_data.qOc[out_of_bounds])
-        Az = fld_data.compute_Az(ptcl_data.r[out_of_bounds],
-                                 ptcl_data.z[out_of_bounds],
-                                 ptcl_data.qOc[out_of_bounds])
+            # pretend all the particles are on the x-axis for simplicity
+            sigma = np.sqrt(consts.k_boltzmann*self.temp/consts.electron_mass)
+            vx  = -np.abs(np.random.normal(0.,sigma, n_new_ptcls)) # Must be moving radially inward
+            vy  = np.random.normal(0.,sigma, n_new_ptcls)
+            vz  = np.random.normal(0.,sigma, n_new_ptcls)
+            ptcl_data.r[out_of_bounds] = fld_data.domain_R
 
-        ptcl_data.r[out_of_bounds] = rad
-        ptcl_data.pr[out_of_bounds] = px + ptcl_data.qOc[out_of_bounds]*Ar
-        ptcl_data.pz[out_of_bounds] = pz + ptcl_data.qOc[out_of_bounds]*Az
-        # set the angular momentum
-        ptcl_data.ell[out_of_bounds] = py*rad
+            Ar = fld_data.compute_Ar(ptcl_data.r[out_of_bounds],
+                                     ptcl_data.z[out_of_bounds],
+                                     ptcl_data.qOc[out_of_bounds])
+            Az = fld_data.compute_Az(ptcl_data.r[out_of_bounds],
+                                     ptcl_data.z[out_of_bounds],
+                                     ptcl_data.qOc[out_of_bounds])
+
+            weighted_mass = ptcl_data.mass*ptcl_data.weight[out_of_bounds]
+
+            ptcl_data.pr[out_of_bounds] = weighted_mass*vx + Ar
+            ptcl_data.pz[out_of_bounds] = weighted_mass*vz + Az
+            # set the angular momentum
+            ptcl_data.ell[out_of_bounds] = weighted_mass*vy*ptcl_data.r[out_of_bounds]
 

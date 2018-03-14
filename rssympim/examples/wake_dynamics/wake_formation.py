@@ -27,8 +27,7 @@ from rssympim.sympim_rz.data import particle_data, field_data
 
 from beam_integrator import beam_integrator
 
-from rssympim.sympim_rz.boundaries import radial_thermal, \
-    radial_reflecting, longitudinal_absorb
+from rssympim.sympim_rz.boundaries import radial_thermal, longitudinal_thermal
 
 from rssympim.constants import constants as consts
 
@@ -36,14 +35,9 @@ import numpy as np
 
 from rssympim.sympim_rz.io import field_io, particle_io
 
-from rssympim.sympim_rz.analysis import field_analysis
-
 from mpi4py import MPI as mpi
 
 import time
-import matplotlib as mpl
-mpl.use('TkAgg')
-from matplotlib import pyplot as plt
 
 ###
 #
@@ -74,21 +68,22 @@ from matplotlib import pyplot as plt
 # Drive beam parameters
 #
 
-N_beam  = 1.e9   # number of electrons
-sigma_r = 1.e-3 # cm
-sigma_z = 1.e-3 # cm
+## FACET-II parameters
+N_beam  = 2.5e10  # number of electrons
+sigma_r = 10.e-4   # cm
+sigma_z = 10.e-4  # cm
 
 #
 # Plasma parameters
 #
 
-n0 = 1.e17 # cm^-3
+n0 = 2.e17 # cm^-3
 k_p = np.sqrt(4*np.pi*n0 *
                   consts.electron_charge*consts.electron_charge /
                   consts.electron_mass)/consts.c
 
 
-plasma_temperature = 10. # Kelvins
+plasma_temperature = 1500. # Kelvins
 
 # We are simulating electrons
 charge = -consts.electron_charge
@@ -105,7 +100,6 @@ beta_beam = 1.  # beam v_z/speed of light, needs to be 1 or pretty
                 # beam space charge fields.
 domain_r = 3 # 2.*np.pi/k_p
 domain_l = 4 # 2.*np.pi/k_p
-steps_per_plasma_period = 25
 
 r_modes_per_kp = 8
 z_modes_per_kp = 8
@@ -136,9 +130,9 @@ n_beam = N_beam/(4.*r_beam*r_beam*z_beam*np.pi/3.)
 length = domain_l*2.*np.pi/k_p
 radius = domain_r*2.*np.pi/k_p
 
-# Step size
+# Step size, resolve the drive bunch
 
-dtau = (2.*np.pi/k_p)/steps_per_plasma_period
+dtau = (sigma_z)/100
 
 #
 # Create the particle data
@@ -179,17 +173,13 @@ ptcl_data.z[:] = z[:]
 # Properly adjust the weights for constant density
 
 # compute the number of particles contained in a "uniform" macroparticle distribution
-ptcl_wgt = n0*fld_data.ptcl_width_z*fld_data.ptcl_width_r*ptcl_data.r
+ptcl_wgt = n0*2.*np.pi*fld_data.ptcl_width_z*fld_data.ptcl_width_r*ptcl_data.r
 
 # scale up to get the right total number of particles
 ptcl_wgt *= n0*np.pi*radius*radius*length/np.sum(ptcl_wgt)
 
-print np.sum(ptcl_wgt)
-print n0*np.pi*radius*radius*length
-
+ptcl_data.weight = ptcl_wgt
 ptcl_data.qOc *= ptcl_wgt
-ptcl_data.q   *= ptcl_wgt
-ptcl_data.m   *= ptcl_wgt
 ptcl_data.mc  *= ptcl_wgt
 
 # Generate a non-relativistic thermal distribution
@@ -207,14 +197,12 @@ ptcl_data.pz  = v_z * ptcl_data.m
 ptcl_data.pr  = v_r * ptcl_data.m
 
 #
-# Stimulate the beam exciting the wake, then dump
+# Simulate the beam exciting the wake, then dump
 #
 
-sim_len = 4.*z_beam + 2.*length
+sim_len = (4.*z_beam + length)/2
 
-print 'z_beam', z_beam
-print 'length', length
-nsteps = int(sim_len/dtau)/2
+nsteps = int(sim_len/dtau)
 
 if rank == 0:
     print 'Simulation parameters:'
@@ -228,69 +216,44 @@ if rank == 0:
     print ' ptcls/core   ', n_ptcls_per_core
     print ' n modes, r   ', n_modes_r
     print ' n modes, z   ', n_modes_z
+    print ' sigma_z      ', sigma_z, 'cm'
+    print ' sigma_r      ', sigma_r, 'cm'
 
 step_num = 0
 
 # Start the beam off the simulation domain
-beam_pos = -2.*z_beam + step_num * dtau
+beam_pos = -2.*z_beam
 
 modified_ptcl_update_sequence = \
     beam_integrator(r_beam, z_beam, n_beam, dtau, fld_data)
 t0 = time.time()
 
+radial_boundary = radial_thermal.radial_thermal(plasma_temperature)
+longitudinal_boundary = longitudinal_thermal.longitudinal_thermal(plasma_temperature)
+
 while step_num < nsteps:
 
-    # add field maps
+    radial_boundary.apply_boundary(ptcl_data, fld_data)
+    longitudinal_boundary.apply_boundary(ptcl_data, fld_data)
 
     beam_pos += beta_beam * dtau / 2
 
     modified_ptcl_update_sequence.update(ptcl_data, fld_data, beam_pos)
 
+    modified_ptcl_update_sequence.compute_az(ptcl_data, beam_pos)
+
     # Beam is moving at the speed of light
-    beam_pos += beta_beam*dtau/2
+    beam_pos += beta_beam * dtau / 2
 
     if rank == 0:
         if step_num%10 == 0:
             print 'completing step', step_num, 'in', time.time() - t0, 'sec'
-
     step_num += 1
 
 # Dump the particles and fields to set up an initial condition for the next simulation
-
-plt.scatter(ptcl_data.z, ptcl_data.r, s=1)
-plt.xlabel('z')
-plt.ylabel('r')
-
-plt.show()
-plt.clf()
-
-plt.scatter(ptcl_data.r, ptcl_data.pr/ptcl_data.mc, s=1)
-plt.xlabel('r')
-plt.ylabel('pr')
-
-plt.show()
-plt.clf()
-
-plt.scatter(ptcl_data.z, ptcl_data.pr/ptcl_data.mc, s=1)
-plt.xlabel('z')
-plt.ylabel('pr')
-
-plt.show()
-plt.clf()
 
 field_dumper = field_io.field_io('wake_flds')
 ptcl_dumper = particle_io.particle_io('wake_ptcls')
 
 field_dumper.dump_field(fld_data, 0)
 ptcl_dumper.dump_ptcls(ptcl_data, 0)
-
-analysis = field_analysis.field_analysis()
-
-file_name = 'wake_flds_0.hdf5'
-
-analysis.open_file(file_name)
-
-analysis.plot_Ez('Ez_test.png')#, rmax=.02, zmin=0.03, zmax=0.07)
-analysis.plot_Er('Er_test.png', rmax=.02, zmin=0.03, zmax=0.07)
-
-analysis.close_file()

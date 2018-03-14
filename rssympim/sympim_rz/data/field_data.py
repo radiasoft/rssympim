@@ -370,15 +370,3 @@ class field_data(object):
         energy = e_rad+e_drft
 
         return energy
-
-
-    def apply_moving_window(self):
-        """Shift the fields onto a new basis a distance d to the right"""
-
-        # shift the r coordinates
-        self.dc_coords = np.einsum('zjn, rj -> zrn', self.dc_coords, self.r_shift_matrix)
-        self.omega_coords = np.einsum('zjn, rj -> zrn', self.omega_coords, self.r_shift_matrix)
-
-        # shift the z coordinates
-        self.dc_coords = np.einsum('jrn, zj -> zjn', self.dc_coords, self.z_shift_matrix)
-        self.omega_coords = np.einsum('jrn, zj -> zjn', self.omega_coords, self.z_shift_matrix)
