@@ -80,15 +80,17 @@ class particle_io(object):
 
             wgt[:] = ptcl_class.weight[:]
 
-            for sndr in range(0, self.size):
-                ptclclass = self.comm.recv(source=sndr, tag=11)
+            if self.size > 1:
 
-                np.append(pr, ptclclass.pr)
-                np.append(pz, ptclclass.pz)
-                np.append(pl, ptclclass.ell)
-                np.append(r, ptclclass.r)
-                np.append(z, ptclclass.z)
-                np.append(wgt, ptclclass.weight)
+                for sndr in range(0, self.size):
+                    ptclclass = self.comm.recv(source=sndr, tag=11)
+
+                    np.append(pr, ptclclass.pr)
+                    np.append(pz, ptclclass.pz)
+                    np.append(pl, ptclclass.ell)
+                    np.append(r, ptclclass.r)
+                    np.append(z, ptclclass.z)
+                    np.append(wgt, ptclclass.weight)
 
             dump_file.attrs['charge'] = ptcl_class.charge
             dump_file.attrs['mass'] = ptcl_class.mass
@@ -110,7 +112,7 @@ class particle_io(object):
                 'pl', data = pl
             )
             ptcl_weight = dump_file.create_dataset(
-                'weight', data = weight
+                'weight', data = wgt
             )
 
         else:
