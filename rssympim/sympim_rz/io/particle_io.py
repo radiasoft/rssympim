@@ -82,7 +82,8 @@ class particle_io(object):
 
             if self.size > 1:
 
-                for sndr in range(0, self.size):
+                for sndr in range(1, self.size):
+
                     ptclclass = self.comm.recv(source=sndr, tag=11)
 
                     np.append(pr, ptclclass.pr)
