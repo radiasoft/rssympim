@@ -16,7 +16,7 @@ class ptcl_maps:
         self.halfdt = _dt/ 2.
 
 
-    def drift_r(self, ptcl_data):
+    def drift_r(self, ptcl_data, fld_data):
         """
         Particles drift in r for a full step
         
@@ -28,7 +28,7 @@ class ptcl_maps:
 
         ptcl_data.r += (ptcl_data.pr / ptcl_data.gamma_mc) * self.dt
         # Have to wrap particles around if they passed through the central axis
-        ptcl_data.r_boundaries()
+        ptcl_data.r_boundaries(fld_data)
 
 
     def drift_z(self, ptcl_data):
