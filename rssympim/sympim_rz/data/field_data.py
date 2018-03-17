@@ -169,7 +169,7 @@ class field_data(object):
                 j0(_x+0.5*delta_x))/6.
 
 
-    def compute_S_r_kick(self, r, z, qOc):
+    def compute_S_r_kick(self, r, z, qOc, **kwargs):
 
         """
         Evaluates the radial kicks for a set of particles
@@ -190,24 +190,26 @@ class field_data(object):
         A length-4 list of 1darrays, each of shape (particles.np,)
 
         """
-
-        kz_cross_z = einsum('z, p -> zp', self.kz, z)
+        # Calculate the convolution quantities we need
         kr_cross_r = einsum('r, p -> rp', self.kr, r)
         delta_r = np.ones(np.size(r)) * self.ptcl_width_r
         delta_u = einsum('r, p -> rp', self.kr, delta_r)
+        j1 = self.convolved_j1(kr_cross_r, delta_u)
+        int_j1 = einsum('rp, r -> rp', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
 
-        # Calculate the convolution quantities we need
-        convolved_j1 = self.convolved_j1(kr_cross_r, delta_u)
-        convolved_sin = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z)
-        int_convolved_j1 = einsum('rp, r -> rp', self.int_convolved_j1(kr_cross_r, delta_u), self.oneOkr)
-        d_convolved_sin_dz = einsum('zp, z -> zp', cos(kz_cross_z), self.kz*self.shape_function_z)
+        # z does not change between S_r and S_r-inverse, so only need to compute once
+        if kwargs['inverse'] == False:
+            self.kz_cross_z = einsum('z, p -> zp', self.kz, z)
+            self.convolved_sin = einsum('zp, z -> zp', sin(self.kz_cross_z), self.shape_function_z)
+            self.d_convolved_sin_dz = einsum('zp, z -> zp', cos(self.kz_cross_z), self.kz*self.shape_function_z)
+
 
         # Calculate Q_r for each mode
         modeQr = self.omegaOtwokz * (self.dc_coords[:,:,1] - self.omega_coords[:,:,1])
 
-        kick_z = einsum('zr, rp, zp -> p', modeQr, int_convolved_j1, d_convolved_sin_dz) * qOc
-        kick_r = einsum('zr, rp, zp -> p', modeQr, convolved_j1, convolved_sin) * qOc
-        dFrdQ = einsum('rp, zp, p -> zr', int_convolved_j1, convolved_sin, qOc)
+        kick_z = einsum('zr, rp, zp -> p', modeQr, int_j1, self.d_convolved_sin_dz) * qOc
+        kick_r = einsum('zr, rp, zp -> p', modeQr, j1, self.convolved_sin) * qOc
+        dFrdQ = einsum('rp, zp, p -> zr', int_j1, self.convolved_sin, qOc)
 
         kick_Q0     = dFrdQ*self.omegaOtwokz
         kick_Qomega = -dFrdQ*self.omegaOtwokz
@@ -240,17 +242,17 @@ class field_data(object):
         kr_cross_r = einsum('r, p -> rp', self.kr, r)
         delta_r = np.ones(np.size(r))*self.ptcl_width_r
         delta_u = einsum('r, p -> rp', self.kr, delta_r)
-        convolved_j1 = self.convolved_j1(kr_cross_r, delta_u)
+        j1 = self.convolved_j1(kr_cross_r, delta_u)
         convolved_sin = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z)
 
         modeQr = self.omegaOtwokz * (self.dc_coords[:,:,1] - self.omega_coords[:,:,1])
 
-        Ar = einsum('zr, rp, zp -> p', modeQr, convolved_j1, convolved_sin)*qOc
+        Ar = einsum('zr, rp, zp -> p', modeQr, j1, convolved_sin)*qOc
 
         return Ar
 
 
-    def compute_S_z_kick(self, r, z, qOc):
+    def compute_S_z_kick(self, r, z, qOc, **kwargs):
 
         """
         Evaluates the longitudinal kicks for a set of particles
@@ -271,29 +273,31 @@ class field_data(object):
         A length-4 list of 1darrays, each of shape (particles.np,)
 
         """
+        # Calculate the convolution quantities we need
 
         kz_cross_z = einsum('z, p -> zp', self.kz, z)
-        kr_cross_r = einsum('r, p -> rp', self.kr, r)
-        delta_r = np.ones(np.size(r)) * self.ptcl_width_r
-        delta_u = einsum('r, p -> rp', self.kr, delta_r)
-
-        # Calculate the convolution quantities we need
-        convolved_j0 = self.convolved_j0(kr_cross_r, delta_u)
         convolved_cos = einsum('zp, z -> zp', cos(kz_cross_z), self.shape_function_z)
-        d_convolved_j0_dr = einsum('rp, r -> rp', -self.convolved_j1(kr_cross_r, delta_u), self.kr)
         int_convolved_cos_dz = einsum('zp, z -> zp', sin(kz_cross_z), self.shape_function_z*self.oneOkz)
+
+        # r does not change between S_z and S_z-inverse, so only need to compute once
+        if kwargs['inverse'] == False:
+            self.kr_cross_r = einsum('r, p -> rp', self.kr, r)
+            self.delta_r = np.ones(np.size(r)) * self.ptcl_width_r
+            self.delta_u = einsum('r, p -> rp', self.kr, self.delta_r)
+            self.j0 = self.convolved_j0(self.kr_cross_r, self.delta_u)
+            self.d_convolved_j0_dr = einsum('rp, r -> rp',
+                                            -self.convolved_j1(self.kr_cross_r, self.delta_u), self.kr)
 
         # Calculate Q_z for each mode
         modeQz = self.omegaOtwokr * (self.dc_coords[:,:,1] + self.omega_coords[:,:,1])
 
-        kick_z = einsum('zr, rp, zp -> p', modeQz, convolved_j0, convolved_cos)*qOc
-        kick_r = einsum('zr, rp, zp -> p', modeQz, d_convolved_j0_dr, int_convolved_cos_dz)*qOc
+        kick_z = einsum('zr, rp, zp -> p', modeQz, self.j0, convolved_cos)*qOc
+        kick_r = einsum('zr, rp, zp -> p', modeQz, self.d_convolved_j0_dr, int_convolved_cos_dz)*qOc
 
-        dFzdQ = einsum('rp, zp, p -> zr', convolved_j0, int_convolved_cos_dz, qOc)
+        dFzdQ = einsum('rp, zp, p -> zr', self.j0, int_convolved_cos_dz, qOc)
 
         kick_Q0     = dFzdQ*self.omegaOtwokr
         kick_Qomega = dFzdQ*self.omegaOtwokr
-
 
         return kick_z, kick_r, kick_Q0, kick_Qomega
 

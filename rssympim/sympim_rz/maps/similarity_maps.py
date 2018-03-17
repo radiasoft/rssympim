@@ -19,7 +19,7 @@ class similarity_maps():
         """
 
         kick_z, kick_r, kick_Q0, kick_Qomega = \
-            field_data.compute_S_r_kick(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+            field_data.compute_S_r_kick(ptcl_data.r, ptcl_data.z, ptcl_data.qOc, inverse=False)
 
         # Update the particle momenta
         ptcl_data.pz -= kick_z
@@ -42,7 +42,7 @@ class similarity_maps():
         """
 
         kick_z, kick_r, kick_Q0, kick_Qomega = \
-            field_data.compute_S_r_kick(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+            field_data.compute_S_r_kick(ptcl_data.r, ptcl_data.z, ptcl_data.qOc, inverse=True)
 
         # Update the particle momenta
         ptcl_data.pz += kick_z
@@ -65,7 +65,7 @@ class similarity_maps():
         """
 
         kick_z, kick_r, kick_Q0, kick_Qomega = \
-            field_data.compute_S_z_kick(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+            field_data.compute_S_z_kick(ptcl_data.r, ptcl_data.z, ptcl_data.qOc, inverse = False)
 
         # Update the particle momenta
         ptcl_data.pz -= kick_z
@@ -88,7 +88,7 @@ class similarity_maps():
         """
 
         kick_z, kick_r, kick_Q0, kick_Qomega = \
-            field_data.compute_S_z_kick(ptcl_data.r, ptcl_data.z, ptcl_data.qOc)
+            field_data.compute_S_z_kick(ptcl_data.r, ptcl_data.z, ptcl_data.qOc, inverse = True)
 
         # Update the particle momenta
         ptcl_data.pz += kick_z
