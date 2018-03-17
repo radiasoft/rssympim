@@ -64,7 +64,7 @@ class beam_integrator:
         self.S_z_inverse_external(ptcl_data, beam_pos)
 
         self.sim_maps.S_r(fld_data, ptcl_data)
-        self.ptcl_maps.drift_r(ptcl_data, fld_data)
+        self.ptcl_maps.drift_r(ptcl_data)
         self.sim_maps.S_r_inverse(fld_data, ptcl_data)
 
         self.S_z_external(ptcl_data, beam_pos)
