@@ -53,19 +53,25 @@ class beam_integrator:
         # M_ell S_r D_r S_r^-1 S_z D_z S_z^-1 S_r D_r S_r^-1 M_ell
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 
-        self.sim_maps.S_r(fld_data, ptcl_data)
-        self.ptcl_maps.half_drift_r(ptcl_data, fld_data)
-        self.sim_maps.S_r_inverse(fld_data, ptcl_data)
+        #self.sim_maps.S_r(fld_data, ptcl_data)
+        #self.ptcl_maps.half_drift_r(ptcl_data, fld_data)
+        #self.sim_maps.S_r_inverse(fld_data, ptcl_data)
 
         self.S_z_external(ptcl_data, beam_pos)
         self.sim_maps.S_z(fld_data, ptcl_data)
-        self.ptcl_maps.drift_z(ptcl_data)
+        self.ptcl_maps.half_drift_z(ptcl_data)
         self.sim_maps.S_z_inverse(fld_data, ptcl_data)
         self.S_z_inverse_external(ptcl_data, beam_pos)
 
         self.sim_maps.S_r(fld_data, ptcl_data)
-        self.ptcl_maps.half_drift_r(ptcl_data, fld_data)
+        self.ptcl_maps.drift_r(ptcl_data, fld_data)
         self.sim_maps.S_r_inverse(fld_data, ptcl_data)
+
+        self.S_z_external(ptcl_data, beam_pos)
+        self.sim_maps.S_z(fld_data, ptcl_data)
+        self.ptcl_maps.half_drift_z(ptcl_data)
+        self.sim_maps.S_z_inverse(fld_data, ptcl_data)
+        self.S_z_inverse_external(ptcl_data, beam_pos)
 
         self.ptcl_maps.half_angular_momentum(ptcl_data)
 
