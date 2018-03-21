@@ -51,8 +51,8 @@ class ptcl_analysis(object):
         self.z = np.array(self.file.get('z'))
         self.wgt = np.array(self.file.get('weight'))
 
-        self.pr = self.file.get('r')
-        self.pz = self.file.get('z')
+        self.pr = self.file.get('pr')
+        self.pz = self.file.get('pz')
         self.pl = self.file.get('pl')
 
         self.close_file()
