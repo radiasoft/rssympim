@@ -9,6 +9,9 @@ class particle_data:
      
     Parameters
     ----------
+    n_total: int
+        total number of macroparticles across all processors
+
     n_particles: int
         number of macroparticles
     
@@ -27,7 +30,7 @@ class particle_data:
 
     def __init__(self, n_particles, charge, mass, weight, species_name=False):
 
-
+        self.n_total = n_particles
         self.np = n_particles
 
         self.r = np.zeros(n_particles)

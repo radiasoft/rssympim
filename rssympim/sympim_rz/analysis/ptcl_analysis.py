@@ -72,6 +72,17 @@ class ptcl_analysis(object):
         self.length = self.file.attrs['L']
         self.close_file()
 
+    def get_density(self):
+
+
+        # pd is the particle weight divided by the volume of a cell -e.g. e-/cm^3
+        pd = self.wgt / (2. * np.pi * self.ptcl_width_r * self.ptcl_width_z * self.r)
+
+        H, zbins, rbins = np.histogram2d(self.z, self.r, weights=pd, bins=(20, 20))
+
+        print np.mean(H)
+
+
 
     def plot_particles(self, fig_name, scale=False):
         """
@@ -84,8 +95,8 @@ class ptcl_analysis(object):
         # pd is the particle weight divided by the volume of a cell -e.g. e-/cm^3
         pd = self.wgt / (2. * np.pi * self.ptcl_width_r * self.ptcl_width_z * self.r)
 
-        print self.r
-        print self.z
+        #print self.r
+        #print self.z
 
         H, zbins, rbins = np.histogram2d(self.z, self.r, weights=pd, bins=(20, 20))
 
