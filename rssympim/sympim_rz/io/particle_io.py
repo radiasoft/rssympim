@@ -131,12 +131,10 @@ class particle_io(object):
         """
 
         read_file = h5py.File(file_name, 'r',
-                              driver=mpio, comm=self.comm)
+                              driver='mpio', comm=self.comm)
 
         # Read in the particle data uniformly across processes
-
         n_ptcls = read_file.attrs['n_ptcls']
-
         ptcls_per_rank = n_ptcls/self.size
 
 
