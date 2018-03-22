@@ -157,14 +157,17 @@ fld_data = field_data.field_data(length, radius,
                                  n_modes_z, n_modes_r)
 ptcl_data = particle_data.particle_data(n_ptcls_per_core,
                                         charge, mass, macro_weight)
+ptcl_data.n_total = n_macro_ptcls
 
 # Initial conditions
-
+np.random.seed(0)
 # uniform particle distribution in x, y, z
 x = radius*np.random.rand(n_ptcls_per_core)
 y = radius*np.random.rand(n_ptcls_per_core)
 r = np.sqrt(x*x + y*y)
 z = length*np.random.rand(n_ptcls_per_core)
+
+print "Mean r value is {}".format(np.mean(r))
 
 # Use colon notation to highlight bugs in counting
 ptcl_data.r[:] = x[:]
@@ -176,7 +179,10 @@ ptcl_data.z[:] = z[:]
 ptcl_wgt = n0*2.*np.pi*fld_data.ptcl_width_z*fld_data.ptcl_width_r*ptcl_data.r
 
 # scale up to get the right total number of particles
-ptcl_wgt *= n0*np.pi*radius*radius*length/np.sum(ptcl_wgt)
+# add additional scaling for the # of particles for that core
+#print "Ratio of local to total particles: {}".format(1.0*ptcl_data.np/ptcl_data.n_total)
+
+ptcl_wgt *= (n0*np.pi*radius*radius*length/np.sum(ptcl_wgt))*(1.0*ptcl_data.np/ptcl_data.n_total)
 
 ptcl_data.weight = ptcl_wgt
 ptcl_data.qOc *= ptcl_wgt
@@ -202,7 +208,7 @@ ptcl_data.pr  = v_r * ptcl_data.m
 
 sim_len = (4.*z_beam + length)/2
 
-nsteps = int(sim_len/dtau)
+nsteps = 10 #int(sim_len/dtau)
 
 if rank == 0:
     print 'Simulation parameters:'
@@ -220,6 +226,8 @@ if rank == 0:
     print ' sigma_r      ', sigma_r, 'cm'
 
 step_num = 0
+
+print "Rank {} processor says np is {}".format(rank,ptcl_data.np)
 
 # Start the beam off the simulation domain
 beam_pos = -2.*z_beam
@@ -253,7 +261,7 @@ while step_num < nsteps:
 # Dump the particles and fields to set up an initial condition for the next simulation
 
 field_dumper = field_io.field_io('wake_flds')
-ptcl_dumper = particle_io.particle_io('wake_ptcls')
+ptcl_dumper = particle_io.particle_io('wake_ptcls')#, parallel_hdf5=True)
 
 field_dumper.dump_field(fld_data, 0)
 ptcl_dumper.dump_ptcls(ptcl_data, 0)
