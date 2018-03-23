@@ -45,8 +45,10 @@ fld_data = field_data.field_data(l_z, l_r, n_z_modes, n_r_modes)
 
 def create_init_conds(_ptcl_data, _field_data):
 
-    _field_data.omega_coords = _ptcl_data.mc[0] * np.ones((n_z_modes, n_r_modes, 2))
-    _field_data.dc_coords = np.zeros((n_z_modes, n_r_modes, 2))
+    #_field_data.omega_coords = _ptcl_data.mc[0] * np.ones((n_z_modes, n_r_modes, 2))
+    #_field_data.dc_coords = np.zeros((n_z_modes, n_r_modes, 2))
+
+    _ptcl_data.qOc[:] = 0.
 
     _ptcl_data.r = np.arange(0.1*l_r, 0.9*l_r, 0.8*l_r/n_macro_ptcls)
     _ptcl_data.z = np.arange(0.1*l_z, 0.9*l_z, 0.8*l_z/n_macro_ptcls)

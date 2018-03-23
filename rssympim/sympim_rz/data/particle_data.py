@@ -41,7 +41,7 @@ class particle_data:
         self.gamma = np.zeros(n_particles)
         self.gamma_mc = np.zeros(n_particles)
 
-        self.weight = weight
+        self.weight = weight*np.ones(n_particles)
 
         self.charge = charge
         self.mass   = mass
@@ -124,6 +124,12 @@ class particle_data:
 
 
     def set_ptcl_weights(self, wgts):
+        """
+        Set the particle weights, and the associated qOc and mc values, consistently.
+
+        :param wgts:
+        :return:
+        """
 
         self.weight[:] = wgts[:]
         self.qOc = self.weight*self.charge/consts.c

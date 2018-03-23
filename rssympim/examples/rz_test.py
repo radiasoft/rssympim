@@ -27,7 +27,7 @@ ptcl_data.pz = ptcl_data.mc*np.arange(0.,10.,10./n_ptcls)
 
 dt = .1/np.amax(fld_data.omega)
 
-my_integrator = integrator.integrator(dt, fld_data.omega)
+my_integrator = integrator.integrator(dt, fld_data)
 
 particle_energies = ptcl_data.compute_ptcl_energy(fld_data)
 field_energies = fld_data.compute_energy()
@@ -38,8 +38,8 @@ E0 = tot_energy
 E = []
 t = []
 
-#E.append(tot_energy)
-#t.append(0.)
+E.append(tot_energy)
+t.append(0.)
 
 n_steps = 100
 step = 0
@@ -47,7 +47,9 @@ step = 0
 t0 = time.time()
 while step < n_steps:
 
-    my_integrator.single_step(ptcl_data, fld_data)
+    my_integrator.half_field_forward(fld_data)
+    my_integrator.single_step_ptcl(ptcl_data, fld_data)
+    my_integrator.half_field_forward(fld_data)
 
     # Note, this implementation will only measure first order accurate
     # energy since it is not doing the correct half-field-updates
@@ -57,7 +59,7 @@ while step < n_steps:
     step += 1
     print 'simulation completed step', str(step)
 
-#    tot_energy = np.sum(particle_energies) + np.sum(field_energies)
+    tot_energy = np.sum(particle_energies) + np.sum(field_energies)
 
     E.append(abs(tot_energy-E0)/E0)
     t.append(step * dt)

@@ -1,4 +1,4 @@
-from integrator import integrator
+from rssympim.sympim_rz.integrators.integrator import integrator
 
 class integrator_y4:
     """
@@ -18,16 +18,17 @@ class integrator_y4:
         self.dt = dt
 
         # create the two second order integrators needed for the fourth order integrator.
-        x1 = - 2.**(1./3.)/(2. - 2.**(1./3.))
-        x2 = 1./(2. - 2.**(1./3.))
-        self.integrator1 = integrator.integrator(x1*self.dt, fld_data)
-        self.integrator2 = integrator.integrator(x2*self.dt, fld_data)
+        x0 = - 2.**(1./3.)/(2. - 2.**(1./3.))
+        x1 = 1./(2. - 2.**(1./3.))
+
+        self.integrator0 = integrator(x0*self.dt, fld_data)
+        self.integrator1 = integrator(x1*self.dt, fld_data)
 
     def update(self, ptcl_data, fld_data):
 
-        self.integrator2.update(ptcl_data, fld_data)
         self.integrator1.update(ptcl_data, fld_data)
-        self.integrator2.update(ptcl_data, fld_data)
+        self.integrator0.update(ptcl_data, fld_data)
+        self.integrator1.update(ptcl_data, fld_data)
 
 
 class integrator_y6:
@@ -48,15 +49,17 @@ class integrator_y6:
         self.dt = dt
 
         # create the two second order integrators needed for the fourth order integrator.
-        y1 = - 2. ** (1. / 5.) / (2. - 2. ** (1. / 5.))
-        y2 = 1. / (2. - 2. ** (1. / 5.))
-        self.integrator1 = integrator_y4.integrator_y4(y1 * self.dt, fld_data)
-        self.integrator2 = integrator_y4.integrator_y4(y2 * self.dt, fld_data)
+        a = 2.**(1./5.)
+        y0 = - a / (2. - a)
+        y1 = 1. / (2. - a)
+
+        self.integrator0 = integrator_y4(y0 * self.dt, fld_data)
+        self.integrator1 = integrator_y4(y1 * self.dt, fld_data)
 
     def update(self, ptcl_data, fld_data):
-        self.integrator2.update(ptcl_data, fld_data)
         self.integrator1.update(ptcl_data, fld_data)
-        self.integrator2.update(ptcl_data, fld_data)
+        self.integrator0.update(ptcl_data, fld_data)
+        self.integrator1.update(ptcl_data, fld_data)
 
 
 class integrator_yn:
@@ -90,19 +93,20 @@ class integrator_yn:
         self.dt = dt
 
         # create the two second order integrators needed for the fourth order integrator.
-        z1 = - 2. ** (1. / (2.*n + 1.)) / (2. - 2. ** (1. / (2.*n + 1.)))
-        z2 = 1. / (2. - 2. ** (1. / (2.*n + 1.)))
+        a = 2. **(1./(2.*n+1.))
+        z0 = - a / (2. - a)
+        z1 = 1. / (2. - a)
 
         if n-2 > 6:
-            self.integrator1 = integrator_yn.integrator_yn(z1 * self.dt, fld_data, n-2)
-            self.integrator2 = integrator_yn.integrator_yn(z2 * self.dt, fld_data, n-2)
+            self.integrator0 = integrator_yn(z0 * self.dt, fld_data, n-2)
+            self.integrator1 = integrator_yn(z1 * self.dt, fld_data, n-2)
         else:
-            self.integrator1 = integrator_y6.integrator_y6(z1 * self.dt, fld_data)
-            self.integrator2 = integrator_y6.integrator_y6(z2 * self.dt, fld_data)
+            self.integrator0 = integrator_y6(z0 * self.dt, fld_data)
+            self.integrator1 = integrator_y6(z1 * self.dt, fld_data)
 
 
     def update(self, ptcl_data, fld_data):
 
-        self.integrator2.update(ptcl_data, fld_data)
         self.integrator1.update(ptcl_data, fld_data)
-        self.integrator2.update(ptcl_data, fld_data)
+        self.integrator0.update(ptcl_data, fld_data)
+        self.integrator1.update(ptcl_data, fld_data)
