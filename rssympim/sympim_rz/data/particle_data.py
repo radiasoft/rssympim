@@ -48,11 +48,8 @@ class particle_data:
 
         self.species_name = species_name
 
-        self.q = charge*np.ones(n_particles)
-        self.m = mass*np.ones(n_particles)
-
-        self.qOc = self.q/consts.c
-        self.mc = self.m*consts.c
+        self.qOc = (self.charge/consts.c)*np.ones(n_particles)
+        self.mc = (self.mass*consts.c)*np.ones(n_particles)
 
 
     def compute_gamma(self, field_data):
@@ -124,6 +121,13 @@ class particle_data:
         self.compute_gamma_mc(field_data)
 
         return self.gamma_mc
+
+
+    def set_ptcl_weights(self, wgts):
+
+        self.weight[:] = wgts[:]
+        self.qOc = self.weight*self.charge/consts.c
+        self.mc = self.weight*self.mass*consts.c
 
 
     def r_boundaries(self, fld_data):

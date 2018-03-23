@@ -209,8 +209,8 @@ class field_data(object):
         # Calculate Q_r for each mode
         modeQr = self.omegaOtwokz * (self.dc_coords[:,:,1] - self.omega_coords[:,:,1])
 
-        kick_z = einsum('zr, rp, zp, p -> p', modeQr, int_j1, self.d_convolved_sin_dz, qOc)# * qOc
-        kick_r = einsum('zr, rp, zp, p -> p', modeQr, j1, self.convolved_sin, qOc)# * qOc
+        kick_z = einsum('zr, rp, zp, p -> p', modeQr, int_j1, self.d_convolved_sin_dz, qOc)
+        kick_r = einsum('zr, rp, zp, p -> p', modeQr, j1, self.convolved_sin, qOc)
         dFrdQ = einsum('rp, zp, p -> zr', int_j1, self.convolved_sin, qOc)
 
         kick_Q0     = dFrdQ*self.omegaOtwokz
