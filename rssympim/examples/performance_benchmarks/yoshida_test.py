@@ -8,7 +8,7 @@ from rssympim.sympim_rz.data import particle_data, field_data
 from rssympim.sympim_rz.integrators import integrator
 
 from rssympim.sympim_rz.integrators.integrator_yoshida \
-    import integrator_y4, integrator_y6, integrator_yn
+    import integrator_y4, integrator_yn
 
 from rssympim.constants import constants
 import numpy as np
@@ -93,7 +93,7 @@ while step < n_steps:
     integrator_2nd = integrator.integrator(dt, fld_data)
 
     integrator_4th = integrator_y4(dt, fld_data)
-    integrator_6th = integrator_y6(dt, fld_data)
+    integrator_6th = integrator_yn(dt, fld_data, 6)
     integrator_8th = integrator_yn(dt, fld_data, 8)
 
     t_of = time.time()
@@ -125,8 +125,7 @@ while step < n_steps:
     tot_energy = np.sum(particle_energies) + np.sum(field_energies)
     E6.append(np.abs(tot_energy-E0)/np.abs(E0))
 
-    # Integrate a single step w/ 6th order using new function
-
+    # Integrate a single step w/ 8th order using new function
     create_init_conds(ptcl_data, fld_data)
     integrator_8th.update(ptcl_data, fld_data)
 
@@ -134,8 +133,6 @@ while step < n_steps:
     field_energies = fld_data.compute_energy()
     tot_energy = np.sum(particle_energies) + np.sum(field_energies)
     E8.append(np.abs(tot_energy-E0)/np.abs(E0))
-
-    print step
 
     step += 1
 
@@ -151,13 +148,15 @@ E6 = np.array(E6)
 E8 = np.array(E8)
 
 plt.loglog(t, E2, label=r'$2^{nd}$ order')
-plt.loglog(t, 2.*(t**3)/10**2, label=r'$d\tau^{3}$', alpha=0.5, linestyle='-.')
+plt.loglog(t, 2.*(t**3)/10**2, label=r'$h^{3}$', alpha=0.5, linestyle='-.')
 plt.loglog(t, E4, label=r'$4^{th}$ order')
-plt.loglog(t, 4.*(t**5)/10**1, label=r'$d\tau^{5}$', alpha=0.5, linestyle='-.')
+plt.loglog(t, 4.*(t**5)/10**1, label=r'$h^{5}$', alpha=0.5, linestyle='-.')
+
 plt.loglog(t, E6, label=r'$6^{th}$ order')
 plt.loglog(t, (t**7)/10**(-1), label=r'$d\tau^{7}$', alpha=0.5, linestyle='-.')
 plt.loglog(t, E8, label=r'$8^{th}$ order')
 plt.loglog(t, (t**9)/10**(-1), label=r'$d\tau^{9}$', alpha=0.5, linestyle='-.')
+
 plt.xlabel(r'$(c \Delta t) \times \frac{k_{max.}}{2 \pi}$')
 plt.ylabel(r'$\left | \frac{\Delta {H}}{{H}_0} \right |$')
 plt.ylim( 10.**-16,E2[0])
