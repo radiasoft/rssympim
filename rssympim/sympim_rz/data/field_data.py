@@ -92,6 +92,14 @@ class field_data(object):
 
         self.shape_function_z = np.exp(-0.5*(self.kz*self.ptcl_width_z)**2)
 
+        # With the conducting boundaries, unphysically large fields can
+        # get trapped on the conducting surfaces. To squelch this, we put
+        # a tanh-function envelope on the fields to make the fields go to
+        # zero quickly but smoothly on the boundaries.
+
+        self.tanh_width = np.max(self.kz)
+        self.z_mean = 0.5*self.domain_L
+
         # Create the mpi communicator
         self.comm = mpi.COMM_WORLD
 
@@ -203,15 +211,21 @@ class field_data(object):
             self.delta_r = np.ones(np.size(r)) * self.ptcl_width_r
             self.delta_u = einsum('r, p -> rp', self.kr, self.delta_r)
 
+            # z doesn't change, so tanh-z doesn't change
+            self.tanhz = -np.tanh(((z-self.z_mean)**2 - self.z_mean**2)*self.tanh_width**2)
+
         j1 = self.convolved_j1(kr_cross_r, self.delta_u)
         int_j1 = einsum('rp, r -> rp', self.int_convolved_j1(kr_cross_r, self.delta_u), self.oneOkr)
 
         # Calculate Q_r for each mode
         modeQr = self.omegaOtwokz * (self.dc_coords[:,:,1] - self.omega_coords[:,:,1])
 
-        kick_z = einsum('zr, rp, zp, p -> p', modeQr, int_j1, self.d_convolved_sin_dz, qOc)
-        kick_r = einsum('zr, rp, zp, p -> p', modeQr, j1, self.convolved_sin, qOc)
-        dFrdQ = einsum('rp, zp, p -> zr', int_j1, self.convolved_sin, qOc)
+        # We dress the charge instead of the fields proper
+        dressed_charge = self.tanhz*qOc
+
+        kick_z = einsum('zr, rp, zp, p -> p', modeQr, int_j1, self.d_convolved_sin_dz, dressed_charge)
+        kick_r = einsum('zr, rp, zp, p -> p', modeQr, j1, self.convolved_sin, dressed_charge)
+        dFrdQ = einsum('rp, zp, p -> zr', int_j1, self.convolved_sin, dressed_charge)
 
         kick_Q0     = dFrdQ*self.omegaOtwokz
         kick_Qomega = -dFrdQ*self.omegaOtwokz
@@ -249,7 +263,12 @@ class field_data(object):
 
         modeQr = self.omegaOtwokz * (self.dc_coords[:,:,1] - self.omega_coords[:,:,1])
 
-        Ar = einsum('zr, rp, zp -> p', modeQr, j1, convolved_sin)*qOc
+        self.tanhz = -np.tanh(((z - self.z_mean) ** 2 - self.z_mean ** 2) * self.tanh_width ** 2)
+        # We dress the charge instead of the fields proper
+        dressed_charge = self.tanhz*qOc
+
+
+        Ar = einsum('zr, rp, zp -> p', modeQr, j1, convolved_sin)*dressed_charge
 
         return Ar
 
@@ -293,10 +312,14 @@ class field_data(object):
         # Calculate Q_z for each mode
         modeQz = self.omegaOtwokr * (self.dc_coords[:,:,1] + self.omega_coords[:,:,1])
 
-        kick_z = einsum('zr, rp, zp -> p', modeQz, self.j0, convolved_cos)*qOc
-        kick_r = einsum('zr, rp, zp -> p', modeQz, self.d_convolved_j0_dr, int_convolved_cos_dz)*qOc
+        self.tanhz = -np.tanh(((z - self.z_mean) ** 2 - self.z_mean ** 2) * self.tanh_width ** 2)
+        # We dress the charge instead of the fields proper
+        dressed_charge = self.tanhz*qOc
 
-        dFzdQ = einsum('rp, zp, p -> zr', self.j0, int_convolved_cos_dz, qOc)
+        kick_z = einsum('zr, rp, zp -> p', modeQz, self.j0, convolved_cos)*dressed_charge
+        kick_r = einsum('zr, rp, zp -> p', modeQz, self.d_convolved_j0_dr, int_convolved_cos_dz)*dressed_charge
+
+        dFzdQ = einsum('rp, zp, p -> zr', self.j0, int_convolved_cos_dz, dressed_charge)
 
         kick_Q0     = dFzdQ*self.omegaOtwokr
         kick_Qomega = dFzdQ*self.omegaOtwokr
@@ -334,7 +357,11 @@ class field_data(object):
 
         modeQz = self.omegaOtwokr * (self.dc_coords[:,:,1] + self.omega_coords[:,:,1])
 
-        Az = einsum('zr, rp, zp -> p', modeQz, convolved_j0, convolved_cos)*qOc
+        self.tanhz = -np.tanh(((z - self.z_mean) ** 2 - self.z_mean ** 2) * self.tanh_width ** 2)
+        # We dress the charge instead of the fields proper
+        dressed_charge = self.tanhz*qOc
+
+        Az = einsum('zr, rp, zp -> p', modeQz, convolved_j0, convolved_cos)*dressed_charge
 
         return Az
 
