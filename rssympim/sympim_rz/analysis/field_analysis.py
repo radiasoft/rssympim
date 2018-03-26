@@ -42,13 +42,16 @@ class field_analysis(object):
         self.file.close()
         self.file_name = False
 
-    def get_energy_spectrum(self, fig_name, scale=False):
+    def get_energy_spectrum(self, scale=False):
         """
-        Contour plot of the energy in the fields versus k_r and k_z
+        Returns an array of the energy in the fields versus (k_z, k_r),
+        along with another array containing the mode frequencies
 
-        :param fig_name:
         :return:
+        omega: 2D array of mode frequencies organized by (k_z, k_r)
+        Energy: 2D array of energies associated with modes (k_z, k_r)
         """
+        
         plt.clf()
 
         P_omega = np.array(self.file.get('p_omega'))
