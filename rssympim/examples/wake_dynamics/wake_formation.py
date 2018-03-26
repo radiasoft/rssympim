@@ -184,12 +184,10 @@ ptcl_wgt = n0*2.*np.pi*fld_data.ptcl_width_z*fld_data.ptcl_width_r*ptcl_data.r
 
 ptcl_wgt *= (n0*np.pi*radius*radius*length/np.sum(ptcl_wgt))*(1.0*ptcl_data.np/ptcl_data.n_total)
 
-ptcl_data.weight = ptcl_wgt
-ptcl_data.qOc *= ptcl_wgt
-ptcl_data.mc  *= ptcl_wgt
+ptcl_data.set_ptcl_weights(ptcl_wgt)
 
 # Generate a non-relativistic thermal distribution
-sigma_v = np.sqrt(consts.k_boltzmann*plasma_temperature/ptcl_data.m)
+sigma_v = np.sqrt(consts.k_boltzmann*plasma_temperature/ptcl_data.mass)
 v_x = np.random.normal(sigma_v, sigma_v, n_ptcls_per_core)
 v_y = np.random.normal(0., sigma_v, n_ptcls_per_core)
 v_z = np.random.normal(0., sigma_v, n_ptcls_per_core)
@@ -198,9 +196,9 @@ v_z = np.random.normal(0., sigma_v, n_ptcls_per_core)
 ell = x*v_y
 v_r = v_x
 
-ptcl_data.ell = ell * ptcl_data.m
-ptcl_data.pz  = v_z * ptcl_data.m
-ptcl_data.pr  = v_r * ptcl_data.m
+ptcl_data.ell = ell * ptcl_data.mass * ptcl_data.weight
+ptcl_data.pz  = v_z * ptcl_data.mass * ptcl_data.weight
+ptcl_data.pr  = v_r * ptcl_data.mass * ptcl_data.weight
 
 #
 # Simulate the beam exciting the wake, then dump

@@ -211,8 +211,7 @@ class field_data(object):
             self.delta_r = np.ones(np.size(r)) * self.ptcl_width_r
             self.delta_u = einsum('r, p -> rp', self.kr, self.delta_r)
 
-            # z doesn't change, so tanh-z doesn't change
-            self.tanhz = -np.tanh(((z-self.z_mean)**2 - self.z_mean**2)*self.tanh_width**2)
+        self.tanhz = -np.tanh(((z-self.z_mean)**2 - self.z_mean**2)*self.tanh_width**2)
 
         j1 = self.convolved_j1(kr_cross_r, self.delta_u)
         int_j1 = einsum('rp, r -> rp', self.int_convolved_j1(kr_cross_r, self.delta_u), self.oneOkr)
