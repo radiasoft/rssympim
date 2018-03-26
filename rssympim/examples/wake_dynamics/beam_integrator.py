@@ -105,8 +105,8 @@ class beam_integrator:
         kick_pr = ptcl_data.qOc[ptcl_z_within_beam] * grad_r * dtau
         kick_pz = ptcl_data.qOc[ptcl_z_within_beam] * grad_z * dtau
 
-        ptcl_data.pr[ptcl_z_within_beam] += kick_pr
-        ptcl_data.pz[ptcl_z_within_beam] += kick_pz
+        ptcl_data.pr[ptcl_z_within_beam] -= kick_pr
+        ptcl_data.pz[ptcl_z_within_beam] -= kick_pz
 
 
     def S_z_external(self, ptcl_data, beam_pos):
