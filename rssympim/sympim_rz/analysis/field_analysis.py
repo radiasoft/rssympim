@@ -42,6 +42,44 @@ class field_analysis(object):
         self.file.close()
         self.file_name = False
 
+    def get_energy_spectrum(self, fig_name, scale=False):
+        """
+        Contour plot of the energy in the fields versus k_r and k_z
+
+        :param fig_name:
+        :return:
+        """
+        plt.clf()
+
+        P_omega = np.array(self.file.get('p_omega'))
+        Q_omega = np.array(self.file.get('q_omega'))
+
+        P_dc = np.array(self.file.get('p_dc'))
+
+        kr = self.file.get('kr')
+        kz = self.file.get('kz')
+
+        mm = self.file.get('mode_mass')
+
+        n_modes_r = np.shape(kr)[0]
+        n_modes_z = np.shape(kz)[0]
+
+        omega = np.zeros((n_modes_z, n_modes_r))
+        for idx_r in range(0, n_modes_r):
+            for idx_z in range(0, n_modes_z):
+                omega[idx_z, idx_r] = \
+                    np.sqrt(kr[idx_r] ** 2 + kz[idx_z] ** 2)
+
+        P_O_sqrd = P_omega*P_omega
+        Q_O_sqrd = Q_omega*Q_omega
+
+        P_D_sqrd = P_dc*P_dc
+
+        Energy = 0.5 * (P_O_sqrd/mm + mm*(omega * Q_O_sqrd) ** 2)
+        Energy += 0.5 * P_D_sqrd/mm
+
+        return omega, Energy
+
 
     def plot_energy_spectrum(self, fig_name, scale=False):
         """
