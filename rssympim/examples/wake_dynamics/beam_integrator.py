@@ -180,6 +180,7 @@ class beam_integrator:
 
         return ptcl_data.qOc * psi
 
+
     def compute_gamma_mc(self, ptcl_data, fld_data, beam_pos):
         """
         Replicates the compute gamma function in the particle data,
@@ -197,3 +198,42 @@ class beam_integrator:
                         )
 
         ptcl_data.gamma_mc = gammamc
+
+
+    def plot_phi_kick(self, R, L, chargeOc, dtau, beam_pos):
+        """
+        Compute the kick a particle with charge chargeOc feels from the scalar
+        potential.
+
+        :param R: maximum radius
+        :param L: maximum length
+        :param chargeOc: charge over c of the species of interest
+        :param dtau: time step
+        :return:
+        """
+
+        RR, LL = np.meshgrid(R, L)
+
+        grad_r = np.zeros(np.shape(RR))
+        grad_z = np.zeros(np.shape(LL))
+
+        ptcl_z_within_beam = np.where(np.abs(LL - beam_pos) < self.z_beam)
+
+        r_arg = RR[ptcl_z_within_beam]**2/(2.*self.r_beam**2)
+        z_arg = (LL[ptcl_z_within_beam]-beam_pos)/(self.z_beam)
+
+        grad_r[ptcl_z_within_beam] = 2.* ((1. - np.exp(-r_arg))/r_arg) \
+                    * (1. - z_arg**2)
+        grad_z[ptcl_z_within_beam] = (
+                        consts.euler_gamma + special.gamma(0.1) *
+                        (1. - special.gammainc(0.1, r_arg))
+                        + np.log(r_arg)
+                    ) * (-2.*z_arg/self.z_beam**2)
+
+        grad_r *= self.kick_coeff
+        grad_z *= self.kick_coeff
+
+        kick_pr = chargeOc * grad_r * dtau
+        kick_pz = chargeOc * grad_z * dtau
+
+        return kick_pr, kick_pz, RR, LL
