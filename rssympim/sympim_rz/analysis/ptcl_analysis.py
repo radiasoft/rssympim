@@ -51,9 +51,9 @@ class ptcl_analysis(object):
         self.z = np.array(self.file.get('z'))
         self.wgt = np.array(self.file.get('weight'))
 
-        self.pr = self.file.get('pr')
-        self.pz = self.file.get('pz')
-        self.pl = self.file.get('pl')
+        self.pr = np.array(self.file.get('pr'))
+        self.pz = np.array(self.file.get('pz'))
+        self.pl = np.array(self.file.get('pl'))
 
         self.close_file()
 
@@ -137,6 +137,9 @@ class ptcl_analysis(object):
         ax.set_xlim([0, self.radius])
         ax.set_ylim([0, 0.1 * max(self.pz / self.mc)])
 
+        print 'Saving figure', fig_name
+        plt.savefig(fig_name)
+
 
     def plot_z_phase(self, fig_name, scale=False):
         """
@@ -153,9 +156,49 @@ class ptcl_analysis(object):
 
         ax.scatter(self.z, self.pz / self.mc, s=2)
 
-        ax.set_xlabel('r')
+        ax.set_xlabel('z')
         ax.set_ylabel(r'p$_z/mc$')
 
         ax.set_title(R'p$_z$ distribution')
         ax.set_xlim([0, self.length])
         ax.set_ylim([0, 0.1 * max(self.pz / self.mc)])
+
+        print 'Saving figure', fig_name
+        plt.savefig(fig_name)
+
+
+    def plot_r_pz_phase(self, fig_name, scale=False):
+
+        fig = plt.figure()
+        ax = fig.gca()
+
+        ax.scatter(self.r, self.pz / self.mc, s=2)
+
+        ax.set_xlabel(r'$r$ [cm]')
+        ax.set_ylabel(r'$p_z/mc$')
+
+        ax.set_title(R'$r-p_z$ distribution')
+        ax.set_xlim([0, self.length])
+        ax.set_ylim([0, 0.1 * max(self.pz / self.mc)])
+
+        print 'Saving figure', fig_name
+        plt.savefig(fig_name)
+
+
+    def plot_z_pr_phase(self, fig_name, scale=False):
+
+
+        fig = plt.figure()
+        ax = fig.gca()
+
+        ax.scatter(self.z, self.pr / self.mc, s=2)
+
+        ax.set_xlabel(r'$z$ [cm]')
+        ax.set_ylabel(r'$p_r/mc$')
+
+        ax.set_title(R'$z-p_r$ distribution')
+        ax.set_xlim([0, self.length])
+        ax.set_ylim([0, 0.1 * max(self.pz / self.mc)])
+
+        print 'Saving figure', fig_name
+        plt.savefig(fig_name)
