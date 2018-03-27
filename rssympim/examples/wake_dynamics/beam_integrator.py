@@ -29,7 +29,9 @@ class beam_integrator:
         self.dt = dt
 
         # A kick coefficient that appears frequently
-        self.kick_coeff = -3*N_beam*consts.electron_charge/(4*self.z_beam)
+        self.kick_coeff = -consts.electron_charge * N_beam # Bunch charge
+        self.kick_coeff *= 3./(8. * np.pi* self.r_beam*self.r_beam*self.z_beam) # Volume factor
+
 
         self.ptcl_maps = ptcl_maps.ptcl_maps(dt)
         self.fld_maps  = field_maps.field_maps(fld_data, dt)
@@ -52,10 +54,6 @@ class beam_integrator:
         # Update sequence goes
         # M_ell S_r D_r S_r^-1 S_z D_z S_z^-1 S_r D_r S_r^-1 M_ell
         self.ptcl_maps.half_angular_momentum(ptcl_data)
-
-        #self.sim_maps.S_r(fld_data, ptcl_data)
-        #self.ptcl_maps.half_drift_r(ptcl_data, fld_data)
-        #self.sim_maps.S_r_inverse(fld_data, ptcl_data)
 
         self.S_z_external(ptcl_data, beam_pos)
         self.sim_maps.S_z(fld_data, ptcl_data)

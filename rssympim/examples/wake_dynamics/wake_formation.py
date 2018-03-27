@@ -118,12 +118,10 @@ size = comm.size
 rank = comm.rank
 
 # Beam parameters
-
-r_beam = np.sqrt(3)*sigma_r
 z_beam = np.sqrt(5)*sigma_z
 
 # Normalization to the volume integral of the beam
-n_beam = N_beam/(4.*r_beam*r_beam*z_beam*np.pi/3.)
+#n_beam = N_beam/(8.*r_beam*r_beam*z_beam*np.pi/3.)
 
 # Domain parameters
 
@@ -206,7 +204,7 @@ ptcl_data.pr  = v_r * ptcl_data.mass * ptcl_data.weight
 
 sim_len = (4.*z_beam + length)/2
 
-nsteps = 10 #int(sim_len/dtau)
+nsteps = int(sim_len/dtau)/4
 
 if rank == 0:
     print 'Simulation parameters:'
@@ -231,7 +229,7 @@ print "Rank {} processor says np is {}".format(rank,ptcl_data.np)
 beam_pos = -2.*z_beam
 
 modified_ptcl_update_sequence = \
-    beam_integrator(r_beam, z_beam, n_beam, dtau, fld_data)
+    beam_integrator(sigma_r, z_beam, N_beam, dtau, fld_data)
 t0 = time.time()
 
 radial_boundary = radial_thermal.radial_thermal(plasma_temperature)
