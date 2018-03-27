@@ -45,7 +45,8 @@ class ptcl_analysis(object):
 
         self.open_file(file_name)
 
-        self.mc = self.file.attrs['mass']
+        mass = self.file.attrs['mass']
+        charge = self.file.attrs['charge']
 
         self.r = np.array(self.file.get('r'))
         self.z = np.array(self.file.get('z'))
@@ -54,6 +55,9 @@ class ptcl_analysis(object):
         self.pr = np.array(self.file.get('pr'))
         self.pz = np.array(self.file.get('pz'))
         self.pl = np.array(self.file.get('pl'))
+
+        self.mc = self.wgt * mass * consts.c
+        self.qOc = self.wgt * charge / consts.c
 
         self.close_file()
 
