@@ -136,8 +136,7 @@ if rank < n_left:
 fld_data = field_data.field_data(length, radius,
                                  n_modes_z, n_modes_r)
 ptcl_data = particle_data.particle_data(n_ptcls_per_core,
-                                        charge, mass, macro_weight)
-ptcl_data.n_total = n_macro_ptcls
+                                        charge, mass, macro_weight, n_total=n_macro_ptcls)
 
 dtau = 0.1*2.*np.pi/np.max(fld_data.omega)
 

@@ -69,7 +69,7 @@ import time
 #
 
 ## FACET-II parameters
-N_beam  = 2.5e10  # number of electrons
+N_beam  = 2.5e6  # number of electrons
 sigma_r = 10.e-4   # cm
 sigma_z = 10.e-4  # cm
 
@@ -154,8 +154,7 @@ if rank < n_left:
 fld_data = field_data.field_data(length, radius,
                                  n_modes_z, n_modes_r)
 ptcl_data = particle_data.particle_data(n_ptcls_per_core,
-                                        charge, mass, macro_weight)
-ptcl_data.n_total = n_macro_ptcls
+                                        charge, mass, macro_weight, n_total=n_macro_ptcls)
 
 # Initial conditions
 np.random.seed(0)
@@ -204,7 +203,7 @@ ptcl_data.pr  = v_r * ptcl_data.mass * ptcl_data.weight
 
 sim_len = (4.*z_beam + length)/2
 
-nsteps = int(sim_len/dtau)/4
+nsteps = int(sim_len/dtau)
 
 if rank == 0:
     print 'Simulation parameters:'

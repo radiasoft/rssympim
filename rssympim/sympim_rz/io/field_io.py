@@ -73,7 +73,7 @@ class field_io(object):
     def read_field(self, file_name):
 
         read_file = h5py.File(file_name, 'r',
-                              driver=mpio, comm=self.comm)
+                              driver='mpio', comm=self.comm)
 
         n_modes_r = np.shape(read_file.get('kr'))[0]
         n_modes_z = np.shape(read_file.get('kz'))[0]

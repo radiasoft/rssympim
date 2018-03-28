@@ -36,7 +36,7 @@ class particle_io(object):
 
             dump_file.attrs['charge'] = ptcl_class.charge
             dump_file.attrs['mass'] = ptcl_class.mass
-            dump_file.attrs['n_ptcls'] = np.shape(ptcl_class.pr)[0]
+            dump_file.attrs['n_ptcls'] = ptcl_class.n_total
 
             ptcl_pr = dump_file.create_dataset(
                 'pr', data = ptcl_class.pr

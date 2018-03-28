@@ -28,10 +28,16 @@ class particle_data:
         name of the particle species
     """
 
-    def __init__(self, n_particles, charge, mass, weight, species_name=False):
+    def __init__(self, n_particles, charge, mass, weight, **kwargs):
 
         self.n_total = n_particles
         self.np = n_particles
+
+        if kwargs.__contains__('n_total'):
+            self.n_total = kwargs['n_total']
+
+        if kwargs.__contains__('species_name'):
+            self.species_name = kwargs['species_name']
 
         self.r = np.zeros(n_particles)
         self.z = np.zeros(n_particles)
@@ -45,8 +51,6 @@ class particle_data:
 
         self.charge = charge
         self.mass   = mass
-
-        self.species_name = species_name
 
         self.qOc = (self.charge/consts.c)*np.ones(n_particles)
         self.mc = (self.mass*consts.c)*np.ones(n_particles)
