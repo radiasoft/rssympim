@@ -253,8 +253,8 @@ longitudinal_boundary = longitudinal_thermal.longitudinal_thermal(plasma_tempera
 
 # Instantiate the I/O objects
 diag_period = 10
-field_dumper = field_io.field_io('wave_flds', diag_period)
-ptcl_dumper = particle_io.particle_io('wave_ptcls', diag_period, parallel_hdf5=True)
+field_dumper = field_io.field_io('wake_flds', diag_period)
+ptcl_dumper = particle_io.particle_io('wake_ptcls', diag_period, parallel_hdf5=True)
 
 # Dump the particles and fields to set up an initial condition
 field_dumper.dump_field(fld_data, 0)
