@@ -133,10 +133,26 @@ n_left = n_macro_ptcls%size
 if rank < n_left:
     n_ptcls_per_core += 1
 
+#Construct the indices for the sectioned arrays
+inc = 0
+end = np.zeros(size)
+ind = np.zeros(size)
+
+for i in range(size):
+    if i < n_left:
+        inc += 1
+    end[i] += n_ptcls_per_core *(i+1)
+    end[i] += inc
+    if i+1 < size:
+        ind[i+1] += n_ptcls_per_core *(i+1)
+        ind[i+1] += inc
+
+
 fld_data = field_data.field_data(length, radius,
                                  n_modes_z, n_modes_r)
 ptcl_data = particle_data.particle_data(n_ptcls_per_core,
-                                        charge, mass, macro_weight, n_total=n_macro_ptcls)
+                                        charge, mass, macro_weight, n_total=n_macro_ptcls,
+                                        end = end, ind = ind)
 
 dtau = 0.1*2.*np.pi/np.max(fld_data.omega)
 
