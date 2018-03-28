@@ -216,6 +216,15 @@ t0 = time.time()
 radial_boundary = radial_thermal.radial_thermal(plasma_temperature)
 longitudinal_boundary = longitudinal_thermal.longitudinal_thermal(plasma_temperature)
 
+# Instantiate the I/O objects
+diag_period = 10
+field_dumper = field_io.field_io('wave_flds', diag_period)
+ptcl_dumper = particle_io.particle_io('wave_ptcls', diag_period, parallel_hdf5=True)
+
+# Dump the particles and fields to set up an initial condition
+field_dumper.dump_field(fld_data, 0)
+ptcl_dumper.dump_ptcls(ptcl_data, 0)
+
 while step_num < nsteps:
 
     radial_boundary.apply_boundary(ptcl_data, fld_data)
@@ -223,15 +232,12 @@ while step_num < nsteps:
 
     update_sequence.update(ptcl_data, fld_data)
 
-    if rank == 0:
-        if step_num%10 == 0:
-            print 'completing step', step_num, 'in', time.time() - t0, 'sec'
     step_num += 1
 
-# Dump the particles and fields to set up an initial condition for the next simulation
+    if step_num % diag_period == 0:
+        field_dumper.dump_field(fld_data, step_num)
+        ptcl_dumper.dump_ptcls(ptcl_data, step_num)
 
-field_dumper = field_io.field_io('wave_flds') #, parallel_hdf5=True)
-ptcl_dumper = particle_io.particle_io('wave_ptcls') #, parallel_hdf5=True)
-
-field_dumper.dump_field(fld_data, 0)
-ptcl_dumper.dump_ptcls(ptcl_data, 0)
+    if step_num % 10 == 0:
+        if rank == 0:
+            print 'completing step', step_num, 'in', time.time() - t0, 'sec'

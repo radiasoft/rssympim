@@ -10,10 +10,17 @@ import numpy as np
 
 class field_io(object):
 
-    def __init__(self, field_name):
+    def __init__(self, field_name, period=10):
+        '''
+        Class for field data I/O.
+
+        Arguments:
+            - field_name: file prefix for dumping the particles
+            - period: number of steps between writing to file
+        '''
 
         self.field_name = field_name
-
+        self.period = period
         self.rank = MPI.COMM_WORLD.rank
 
 

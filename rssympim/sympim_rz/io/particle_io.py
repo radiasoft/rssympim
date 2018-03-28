@@ -10,10 +10,21 @@ import numpy as np
 
 class particle_io(object):
 
-    def __init__(self, particle_name, parallel_hdf5 = False):
+    def __init__(self, particle_name, period=10, parallel_hdf5 = False):
+        '''
+        Class for particle data I/O.
+
+        Arguments:
+            - particle_name:       file prefix for dumping the particles
+            - period:           number of steps between writing to file
+            - parallel_hdf5:    If True, use parallel hdf5 for I/O
+        '''
+
+
+
 
         self.ptcl_name = particle_name
-
+        self.period = period
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.rank
         self.size = self.comm.size
