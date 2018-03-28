@@ -10,7 +10,7 @@ import numpy as np
 
 class particle_io(object):
 
-    def __init__(self, particle_name, period=10, parallel_hdf5 = False):
+    def __init__(self, particle_name, indices, period=10, parallel_hdf5 = False):
         '''
         Class for particle data I/O.
 
@@ -19,7 +19,6 @@ class particle_io(object):
             - period:           number of steps between writing to file
             - parallel_hdf5:    If True, use parallel hdf5 for I/O
         '''
-
 
 
 
@@ -49,24 +48,28 @@ class particle_io(object):
             dump_file.attrs['mass'] = ptcl_class.mass
             dump_file.attrs['n_ptcls'] = ptcl_class.n_total
 
-            ptcl_pr = dump_file.create_dataset(
-                'pr', data = ptcl_class.pr
-            )
-            ptcl_r = dump_file.create_dataset(
-                'r', data = ptcl_class.r
-            )
-            ptcl_pz = dump_file.create_dataset(
-                'pz', data = ptcl_class.pz
-            )
-            ptcl_z = dump_file.create_dataset(
-                'z', data = ptcl_class.z
-            )
-            ptcl_pl = dump_file.create_dataset(
-                'pl', data = ptcl_class.ell
-            )
-            ptcl_weight = dump_file.create_dataset(
-                'weight', data = ptcl_class.weight
-            )
+            #define rank-based indices
+            i0 = int(round(ptcl_class.ind[rank]))
+            j0 = int(round(ptcl_class.end[rank]))
+
+            #create and populate datasets
+            ptcl_pr = f.create_dataset('pr', (ptcl_class.n_total,))
+            ptcl_pr[i0:j0] = ptcl_class.pr
+
+            ptcl_r = f.create_dataset('r', (ptcl_class.n_total,))
+            ptcl_r[i0:j0] = ptcl_class.r
+
+            ptcl_pz = f.create_dataset('pz', (ptcl_class.n_total,))
+            ptcl_pz[i0:j0] = ptcl_class.pz
+
+            ptcl_z = f.create_dataset('z', (ptcl_class.n_total,))
+            ptcl_z[i0:j0] = ptcl_class.z
+
+            ptcl_pl = f.create_dataset('pl', (ptcl_class.n_total,))
+            ptcl_pl[i0:j0] = ptcl_class.ell
+
+            ptcl_weight = f.create_dataset('weight', (ptcl_class.n_total,))
+            ptcl_weight[i0:j0] = ptcl_class.weight
 
             dump_file.close()
 

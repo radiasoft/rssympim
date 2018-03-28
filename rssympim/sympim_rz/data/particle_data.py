@@ -55,6 +55,12 @@ class particle_data:
         self.qOc = (self.charge/consts.c)*np.ones(n_particles)
         self.mc = (self.mass*consts.c)*np.ones(n_particles)
 
+        if kwargs.__contains__('ind'):
+            self.ind = kwargs['ind']
+
+        if kwargs.__contains__('end'):
+            self.end = kwargs['end']
+
 
     def compute_gamma(self, field_data):
         """
