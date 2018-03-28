@@ -49,26 +49,26 @@ class particle_io(object):
             dump_file.attrs['n_ptcls'] = ptcl_class.n_total
 
             #define rank-based indices
-            i0 = int(round(ptcl_class.ind[rank]))
-            j0 = int(round(ptcl_class.end[rank]))
+            i0 = int(round(ptcl_class.ind[self.rank]))
+            j0 = int(round(ptcl_class.end[self.rank]))
 
             #create and populate datasets
-            ptcl_pr = f.create_dataset('pr', (ptcl_class.n_total,))
+            ptcl_pr = dump_file.create_dataset('pr', (ptcl_class.n_total,))
             ptcl_pr[i0:j0] = ptcl_class.pr
 
-            ptcl_r = f.create_dataset('r', (ptcl_class.n_total,))
+            ptcl_r = dump_file.create_dataset('r', (ptcl_class.n_total,))
             ptcl_r[i0:j0] = ptcl_class.r
 
-            ptcl_pz = f.create_dataset('pz', (ptcl_class.n_total,))
+            ptcl_pz = dump_file.create_dataset('pz', (ptcl_class.n_total,))
             ptcl_pz[i0:j0] = ptcl_class.pz
 
-            ptcl_z = f.create_dataset('z', (ptcl_class.n_total,))
+            ptcl_z = dump_file.create_dataset('z', (ptcl_class.n_total,))
             ptcl_z[i0:j0] = ptcl_class.z
 
-            ptcl_pl = f.create_dataset('pl', (ptcl_class.n_total,))
+            ptcl_pl = dump_file.create_dataset('pl', (ptcl_class.n_total,))
             ptcl_pl[i0:j0] = ptcl_class.ell
 
-            ptcl_weight = f.create_dataset('weight', (ptcl_class.n_total,))
+            ptcl_weight = dump_file.create_dataset('weight', (ptcl_class.n_total,))
             ptcl_weight[i0:j0] = ptcl_class.weight
 
             dump_file.close()
