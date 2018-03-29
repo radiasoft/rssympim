@@ -30,7 +30,7 @@ class beam_integrator:
 
         # A kick coefficient that appears frequently
         self.kick_coeff = -consts.electron_charge * N_beam # Bunch charge
-        self.kick_coeff *= 3./(8. * np.pi* self.r_beam*self.r_beam*self.z_beam) # Volume factor
+        self.kick_coeff *= 3./(8. * np.pi*self.z_beam**3) # Volume factor
 
 
         self.ptcl_maps = ptcl_maps.ptcl_maps(dt)
@@ -91,29 +91,30 @@ class beam_integrator:
 
         grad_r = 2.* ((1. - np.exp(-r_arg))/ptcl_data.r[ptcl_z_within_beam]) \
                     * (1. - z_arg**2)
-        grad_z = (
-                        consts.euler_gamma + special.gamma(0.1) *
-                        (1. - special.gammainc(0.1, r_arg))
-                        + np.log(r_arg)
-                    ) * (-2.*z_arg/self.z_beam**2)
+        #grad_z = (
+        #                consts.euler_gamma + special.gamma(0.1) *
+        #                (1. - special.gammainc(0.1, r_arg))
+        #                + np.log(r_arg)
+        #            ) * (-2.*z_arg/self.z_beam**2)
 
         grad_r *= self.kick_coeff
-        grad_z *= self.kick_coeff
+        #grad_z *= self.kick_coeff
 
         kick_pr = ptcl_data.qOc[ptcl_z_within_beam] * grad_r * dtau
-        kick_pz = ptcl_data.qOc[ptcl_z_within_beam] * grad_z * dtau
+        #kick_pz = ptcl_data.qOc[ptcl_z_within_beam] * grad_z * dtau
 
         ptcl_data.pr[ptcl_z_within_beam] -= kick_pr
-        ptcl_data.pz[ptcl_z_within_beam] -= kick_pz
+        #ptcl_data.pz[ptcl_z_within_beam] -= kick_pz
 
 
     def S_z_external(self, ptcl_data, beam_pos):
         """
         Applies the similarity transformation due to the beam fields
         """
-        kick_pz, kick_pr = self.compute_kick(ptcl_data, beam_pos)
 
-        ptcl_data.pz -= kick_pz
+        kick_pr = self.compute_kick(ptcl_data, beam_pos)
+
+        #ptcl_data.pz -= kick_pz
         ptcl_data.pr -= kick_pr
 
 
@@ -122,9 +123,9 @@ class beam_integrator:
         Applies the inverse similarity transformation due to the beam fields
         """
 
-        kick_pz, kick_pr = self.compute_kick(ptcl_data, beam_pos)
+        kick_pr = self.compute_kick(ptcl_data, beam_pos)
 
-        ptcl_data.pz += kick_pz
+        #ptcl_data.pz += kick_pz
         ptcl_data.pr += kick_pr
 
 
@@ -136,13 +137,13 @@ class beam_integrator:
         ptcl_z_within_beam = np.where(np.abs(ptcl_data.z - beam_pos) < self.z_beam)
 
         r_arg = ptcl_data.r[ptcl_z_within_beam]**2/(2.*self.r_beam**2)
-        z_arg = ptcl_data.z[ptcl_z_within_beam]
+        z_arg = ptcl_data.z[ptcl_z_within_beam] - beam_pos
 
         grad_r_int_z = -2.*(
                          (1. - np.exp(-r_arg))/ptcl_data.r[ptcl_z_within_beam]
                         ) * (
-                                z_arg**3/(3.*self.z_beam**2) - z_arg/self.z_beam
-                            )
+                                z_arg**3/(3.*self.z_beam**2) - z_arg
+                            ) #/self.z_beam
 
         grad_z_int_z = (
                          consts.euler_gamma + special.gamma(0.1) *
@@ -156,10 +157,10 @@ class beam_integrator:
         grad_z_int_z *= self.kick_coeff
 
 
-        kick_pr[ptcl_z_within_beam] = ptcl_data.qOc[ptcl_z_within_beam] * grad_r_int_z
-        kick_pz[ptcl_z_within_beam] = ptcl_data.qOc[ptcl_z_within_beam] * grad_z_int_z
+        kick_pr[ptcl_z_within_beam] = -ptcl_data.qOc[ptcl_z_within_beam] * grad_r_int_z
+        #kick_pz[ptcl_z_within_beam] = -ptcl_data.qOc[ptcl_z_within_beam] * grad_z_int_z
 
-        return kick_pz, kick_pr
+        return kick_pz #, kick_pr
 
 
     def compute_az(self, ptcl_data, beam_pos):
@@ -215,7 +216,7 @@ class beam_integrator:
         RR, LL = np.meshgrid(R, L)
 
         grad_r = np.zeros(np.shape(RR))
-        grad_z = np.zeros(np.shape(LL))
+        #grad_z = np.zeros(np.shape(LL))
 
         ptcl_z_within_beam = np.where(np.abs(LL - beam_pos) < self.z_beam)
 
@@ -224,16 +225,16 @@ class beam_integrator:
 
         grad_r[ptcl_z_within_beam] = 2.* ((1. - np.exp(-r_arg))/r_arg) \
                     * (1. - z_arg**2)
-        grad_z[ptcl_z_within_beam] = (
-                        consts.euler_gamma + special.gamma(0.1) *
-                        (1. - special.gammainc(0.1, r_arg))
-                        + np.log(r_arg)
-                    ) * (-2.*z_arg/self.z_beam**2)
+        #grad_z[ptcl_z_within_beam] = (
+        #                consts.euler_gamma + special.gamma(0.1) *
+        #                (1. - special.gammainc(0.1, r_arg))
+                        #+ np.log(r_arg)
+        #            ) * (-2.*z_arg/self.z_beam)
 
         grad_r *= self.kick_coeff
-        grad_z *= self.kick_coeff
+        #grad_z *= self.kick_coeff
 
         kick_pr = chargeOc * grad_r * dtau
-        kick_pz = chargeOc * grad_z * dtau
+        #kick_pz = chargeOc * grad_z * dtau
 
-        return kick_pr, kick_pz, RR, LL
+        return kick_pr, RR, LL

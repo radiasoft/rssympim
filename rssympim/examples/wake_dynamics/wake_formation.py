@@ -69,7 +69,7 @@ import time
 #
 
 ## FACET-II parameters
-N_beam  = 2.5e6  # number of electrons
+N_beam  = 2.5e10  # number of electrons
 sigma_r = 10.e-4   # cm
 sigma_z = 10.e-4  # cm
 
@@ -98,12 +98,12 @@ mass = consts.electron_mass
 beta_beam = 1.  # beam v_z/speed of light, needs to be 1 or pretty
                 # close to it for the approximations on the
                 # beam space charge fields.
-domain_r = 3 # 2.*np.pi/k_p
+domain_r = 2 # 2.*np.pi/k_p
 domain_l = 4 # 2.*np.pi/k_p
 
-r_modes_per_kp = 8
-z_modes_per_kp = 8
-num_macro_per_mode = 8
+r_modes_per_kp = 16
+z_modes_per_kp = 16
+num_macro_per_mode = 32
 
 #--------------------------------------------------------------------
 #
@@ -127,10 +127,6 @@ z_beam = np.sqrt(5)*sigma_z
 
 length = domain_l*2.*np.pi/k_p
 radius = domain_r*2.*np.pi/k_p
-
-# Step size, resolve the drive bunch
-
-dtau = (sigma_z)/100
 
 #
 # Create the particle data
@@ -213,11 +209,15 @@ ptcl_data.ell = ell * ptcl_data.mass * ptcl_data.weight
 ptcl_data.pz  = v_z * ptcl_data.mass * ptcl_data.weight
 ptcl_data.pr  = v_r * ptcl_data.mass * ptcl_data.weight
 
+# Step size, resolve the drive bunch
+
+dtau = (sigma_z)/100
+
 #
 # Simulate the beam exciting the wake, then dump
 #
 
-sim_len = (4.*z_beam + length)/2
+sim_len = (4.*z_beam + length)
 
 nsteps = int(sim_len/dtau)
 
@@ -253,8 +253,8 @@ longitudinal_boundary = longitudinal_thermal.longitudinal_thermal(plasma_tempera
 
 # Instantiate the I/O objects
 diag_period = 10
-field_dumper = field_io.field_io('wake_flds', diag_period)
-ptcl_dumper = particle_io.particle_io('wake_ptcls', diag_period, parallel_hdf5=True)
+field_dumper = field_io.field_io('./data/wake_flds', diag_period)
+ptcl_dumper = particle_io.particle_io('./data/wake_ptcls', diag_period, parallel_hdf5=True)
 
 # Dump the particles and fields to set up an initial condition
 field_dumper.dump_field(fld_data, 0)
@@ -283,3 +283,4 @@ while step_num < nsteps:
     if step_num % 10 == 0:
         if rank == 0:
             print 'completing step', step_num, 'in', time.time() - t0, 'sec'
+            print 'beam at location', beam_pos, 'cm'

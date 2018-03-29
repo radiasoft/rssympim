@@ -88,7 +88,7 @@ class ptcl_analysis(object):
 
 
 
-    def plot_particles(self, fig_name, scale=False):
+    def plot_particle_density(self, fig_name, scale=False):
         """
         Plot of particle distribution in r-z space
 
@@ -119,6 +119,25 @@ class ptcl_analysis(object):
 
         plt.savefig(fig_name)
 
+
+    def plot_particles(self, fig_name, scale=False):
+
+        fig = plt.figure()
+        ax = fig.gca()
+
+        ax.scatter(self.z, self.r, s=2)
+
+        ax.set_xlabel(r'$z$ [cm]')
+        ax.set_ylabel(r'$r$ [cm')
+
+        ax.set_title(R'$z-r$ distribution')
+        ax.set_xlim([0, self.length])
+        ax.set_ylim([0, self.radius])
+
+        plt.savefig(fig_name)
+
+
+
     def plot_r_phase(self, fig_name, scale=False):
         """
         Plot of distribution of r-pr
@@ -141,7 +160,6 @@ class ptcl_analysis(object):
         ax.set_xlim([0, self.radius])
         ax.set_ylim([0, 0.1 * max(self.pz / self.mc)])
 
-        print 'Saving figure', fig_name
         plt.savefig(fig_name)
 
 
@@ -167,7 +185,6 @@ class ptcl_analysis(object):
         ax.set_xlim([0, self.length])
         ax.set_ylim([0, 0.1 * max(self.pz / self.mc)])
 
-        print 'Saving figure', fig_name
         plt.savefig(fig_name)
 
 
@@ -182,10 +199,9 @@ class ptcl_analysis(object):
         ax.set_ylabel(r'$p_z/mc$')
 
         ax.set_title(R'$r-p_z$ distribution')
-        ax.set_xlim([0, self.length])
+        ax.set_xlim([0, self.radius])
         ax.set_ylim([0, 0.1 * max(self.pz / self.mc)])
 
-        print 'Saving figure', fig_name
         plt.savefig(fig_name)
 
 
@@ -204,5 +220,4 @@ class ptcl_analysis(object):
         ax.set_xlim([0, self.length])
         ax.set_ylim([0, 0.1 * max(self.pz / self.mc)])
 
-        print 'Saving figure', fig_name
         plt.savefig(fig_name)
