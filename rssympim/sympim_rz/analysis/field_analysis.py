@@ -6,6 +6,7 @@ Author: Stephen Webb
 
 import h5py
 import matplotlib as mpl
+mpl.use('TkAgg')
 from matplotlib import pyplot as plt
 import matplotlib.ticker as ticker
 from rssympim.constants import constants as consts
