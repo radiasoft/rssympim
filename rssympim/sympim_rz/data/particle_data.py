@@ -160,18 +160,8 @@ class particle_data:
         """
 
         is_negative = np.where(self.r < 0.)
-        # convert to mechanical momentum
-        self.pr[is_negative] = self.pr[is_negative] - \
-                               fld_data.compute_Ar(self.r[is_negative],
-                                                   self.z[is_negative],
-                                                   self.qOc[is_negative])
 
         # flip across the axis
         self.r[is_negative] *= -1.
+        # Can get away with just flipping pr because Ar is odd across the axis
         self.pr[is_negative] *= -1.
-
-        # return to canonical momentum
-        self.pr[is_negative] = self.pr[is_negative] + \
-                               fld_data.compute_Ar(self.r[is_negative],
-                                                   self.z[is_negative],
-                                                   self.qOc[is_negative])
